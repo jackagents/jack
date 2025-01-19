@@ -1,0 +1,220 @@
+/*
+ * @NOTE: Prepend a `~` to css file paths that are in your node_modules
+ *        See https://github.com/webpack-contrib/sass-loader#imports
+ */
+@import '~leaflet/dist/leaflet.css';
+@import url('addons/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css');
+
+body {
+  position: relative;
+  height: 100vh;
+  font-family: sans-serif;
+  overflow-y: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  background-color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  appearance: none;
+  font-size: 1.3rem;
+  box-shadow:
+    0px 8px 28px -6px rgba(24, 39, 75, 0.12),
+    0px 18px 88px -4px rgba(24, 39, 75, 0.14);
+  transition: all ease-in 0.1s;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+button:hover {
+  /* transform: scale(1.1); */
+  opacity: 1;
+}
+
+li {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+  height: fit-content;
+  width: fit-content;
+  margin: 10px;
+}
+
+a:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.Hello {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.leaflet-pixi-overlay {
+  z-index: 1;
+}
+
+.leaflet-tooltip-own {
+  position: absolute;
+  padding: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 1);
+  border: none;
+  color: black;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.leaflet-tooltip-own-alert {
+  position: absolute;
+  padding: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-weight: 700;
+  border: none;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  background-color: red;
+  color: white;
+}
+
+.leaflet-tooltip-own-warning {
+  position: absolute;
+  padding: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-weight: 700;
+  border: none;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  background-color: #ffd42a;
+  color: black;
+}
+
+.leaflet-tooltip-own-information {
+  position: absolute;
+  padding: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-weight: 700;
+  border: none;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  background-color: #2b95ed;
+  color: white;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+.leaflet-tooltip-left:before {
+  right: 0;
+  margin-right: -12px;
+  border-left-color: rgba(0, 0, 0, 0.4);
+}
+.leaflet-tooltip-right:before {
+  left: 0;
+  margin-left: -12px;
+  border-right-color: rgba(0, 0, 0, 0.4);
+}
+
+.mapMenuBtn {
+  display: block;
+  width: 40px;
+  height: 40px;
+  font-size: 35px;
+  line-height: 40px;
+  opacity: 0.8;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0.1;
+  }
+}
+
+.blinking {
+  animation: fade 0.5s infinite alternate;
+  pointer-events: none !important;
+}
+
+.hover-custom-popup .leaflet-popup-content-wrapper {
+  opacity: 0.8;
+  border-radius: 3px;
+}
+
+.hover-custom-popup .leaflet-popup-tip-container {
+  visibility: hidden;
+}
+/* for allotment separator style */
+:root {
+  --focus-border: #007fd4;
+  --separator-border: #000000;
+}
+
+/* for missing concept in editor */
+.editor-missing {
+  color: #d40b0b;
+  font-style: italic;
+}
+
+.editor-missing::after {
+  content: ' (missing)';
+}
+
+.block-cursor {
+  position: relative;
+}
+
+.block-cursor::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: auto; /* Allow the overlay to capture interactions */
+  cursor: not-allowed;
+  z-index: 1; /* Place the overlay above other elements */
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-container.crosshair-cursor-enabled {
+  cursor: crosshair;
+}
+
+.leaflet-interactive.add-cursor-enabled {
+  cursor: copy;
+}
+
+.react-flow__handle {
+  opacity: 0;
+}

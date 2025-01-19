@@ -1,0 +1,47 @@
+.reactFlowPlanEdtitor .react-flow__attribution a {
+  color: black;
+}
+.reactFlowPlanEdtitor .react-flow__controls-button {
+  margin-bottom: 5px;
+}
+/* ---------------------------- custom node style --------------------------- */
+.reactFlowPlanEdtitor .react-flow__node.selected .customShape,
+.reactFlowPlanEdtitor .react-flow__node .customShape:hover {
+  background-color: orange !important;
+}
+
+/* ------------------------ custom node handle style ------------------------ */
+.reactFlowPlanEdtitor .react-flow__node .react-flow__handle {
+  opacity: 1;
+  display: block !important;
+  border-radius: 25%;
+}
+
+/* ---------------------------- custom edge style --------------------------- */
+.react-flow__edges {
+  z-index: 1000 !important; /* Make edge on top of nodes */
+}
+
+.react-flow_edge_label {
+  z-index: 1001 !important; /* Make edge label on top of edges */
+}
+
+.reactFlowPlanEdtitor .react-flow__edge .react-flow__edge-path {
+  stroke-width: 4px;
+}
+
+.reactFlowPlanEdtitor .react-flow__edge.selected .react-flow__edge-path,
+.reactFlowPlanEdtitor .react-flow__edge:hover .react-flow__edge-path {
+  stroke: orange !important;
+}
+
+/* only allow selected edge to updae source/target */
+.reactFlowPlanEdtitor .react-flow__edge:not(.selected) circle {
+  pointer-events: none;
+}
+
+/* ----------------------- custom edge add icon style ----------------------- */
+
+.reactFlowPlanEdtitor .react-flow_edge_label .react-flow_edge_add-icon:hover {
+  background: orange !important;
+}

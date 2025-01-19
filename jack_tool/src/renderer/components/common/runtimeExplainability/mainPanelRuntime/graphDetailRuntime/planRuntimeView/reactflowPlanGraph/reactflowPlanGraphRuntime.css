@@ -1,0 +1,38 @@
+.reactFlowPlanGraphRuntime .react-flow__edge path.animated {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+.reactFlowPlanGraphRuntime .react-flow__edge-path {
+  stroke-width: 3px;
+  stroke: green;
+}
+
+.reactFlowPlanGraphRuntime .react-flow__edgelabel-renderer {
+  z-index: 1000;
+}
+.reactFlowPlanGraphRuntime .react-flow__node {
+  z-index: 1001 !important;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
+
+/* ------------------------ custom node handle style ------------------------ */
+.reactFlowPlanGraphRuntime .react-flow__node .react-flow__handle {
+  opacity: 1;
+  display: block !important;
+  border-radius: 25%;
+  border: 1px solid black !important;
+}
+
+.reactFlowPlanGraphRuntime .react-flow__node .react-flow__handle div {
+  color: black !important;
+}
+
+.reactFlowPlanGraphRuntime .react-flow__node .intentionContextNode .react-flow__handle {
+  opacity: 0;
+}

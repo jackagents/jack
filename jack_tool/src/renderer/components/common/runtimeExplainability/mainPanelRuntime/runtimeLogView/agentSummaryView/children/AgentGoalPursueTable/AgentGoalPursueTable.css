@@ -1,0 +1,22 @@
+.agentGoalPursueTable {
+  width: 100%;
+  height: 100%;
+  transition: grid-template-rows 0.5s ease;
+}
+
+.agentGoalPursueTable .rdg-row {
+  cursor: pointer;
+}
+
+.agentGoalPursueTable .rdg-row.row-selected {
+  background-color: grey;
+}
+
+.agentGoalPursueTable .rdg-cell {
+  padding-left: 8px;
+  padding-right: 8px;
+
+  &[aria-selected='true'] {
+    outline: none;
+  }
+}

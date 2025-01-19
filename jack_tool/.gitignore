@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage directory used by tools like istanbul
+coverage
+.eslintcache
+
+# Dependency directory
+# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
+node_modules
+
+# OSX
+.DS_Store
+
+release/app/dist
+release/build
+.erb/dll
+
+.idea
+npm-debug.log.*
+*.css.d.ts
+*.sass.d.ts
+*.scss.d.ts
+node_modules
+
+pmtiles
+
+assets/license/license.md
+assets/buildInfo/build-info.json
+*.test.ts.snap
+export_deliveryrobot.json
+
+# garbage from executable
+event-dump.json
+imgui.ini
+
+*.scene
+
+src/webpage/iwd-web/dist/
+
+# garbage from typecheck script
+type-check.tsbuildinfo

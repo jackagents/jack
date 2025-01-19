@@ -1,0 +1,4 @@
+.duplicated-name::after {
+  content: ' (duplicated)';
+  color: red;
+}

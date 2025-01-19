@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=${version}
+Name=C-BDI Editor ${version}
+GenericName=C-BDI Editor
+Exec="/opt/cbdi-${cbdiVersion}/bin/C-BDI Editor-${version}.AppImage" %f
+Terminal=false
+Hidden=false
+Icon=/opt/cbdi-${cbdiVersion}/icons/icon.png
+Type=Application
+Categories=Development;Utility
+MimeType=application/cbdi-editor

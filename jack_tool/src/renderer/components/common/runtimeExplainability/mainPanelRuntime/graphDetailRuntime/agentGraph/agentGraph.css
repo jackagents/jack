@@ -1,0 +1,14 @@
+.default-link {
+  stroke: gray;
+  stroke-width: 2px;
+}
+
+.green-link {
+  stroke: green;
+  stroke-width: 3px;
+}
+
+.hidden-link {
+  stroke: transparent;
+  stroke-width: 0;
+}
