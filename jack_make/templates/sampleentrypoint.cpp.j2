@@ -1,0 +1,23 @@
+#include <{{ project.bumpy_case|lower }}/meta/{{ project.bumpy_case|lower }}.h>
+{{ project.emit_cpp_namespace_begin() }}
+int main(int /*argc*/, char **/*argv*/)
+{
+    {{ project.bumpy_case }} bdi; /// Initializing the bdi application
+    {%- if workspace.agents_len() > 0 %}
+
+    /// Create the agents
+    {%- for agent in workspace.agents() %}
+    aos::jack::AgentHandle {{ agent.id.bumpy_case|lower }}Handle = bdi.createAgent("{{ agent.id.qualified_name() }} Template", "{{ agent.id.qualified_name()|lower }}");
+    {%- endfor %}
+
+    /// Start the agents
+    {%- for agent in workspace.agents() %}
+    aos::jack::Agent* {{ agent.id.bumpy_case|lower }} = bdi.getAgent({{ agent.id.bumpy_case|lower }}Handle);
+    {{ agent.id.bumpy_case|lower }}->start();
+    {%- endfor %}
+    {%- endif %}
+
+    bdi.execute(); /// Execute the bdi application synchronously
+    return 0;
+}
+{{ project.emit_cpp_namespace_end() }}

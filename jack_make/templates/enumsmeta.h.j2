@@ -1,0 +1,37 @@
+{{ project.emit_cpp_header_guard_begin("ENUMS", "_META") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// Third Party
+#include <nlohmann/json.hpp>
+#include <string_view>
+
+{{ project.emit_cpp_namespace_begin() }}
+{%- for enum_val in model.enums %}
+
+enum {{ enum_val.id.bumpy_case }}
+{
+    {%- for field in enum_val.fields %}
+    {{ enum_val.id.bumpy_case }}_{{ field.bumpy_case }} = {{ field.value }},
+    {%- endfor %}
+};
+{%- endfor %}
+
+{%- for enum_val in model.enums %}
+std::string_view {{ enum_val.id.bumpy_case }}String({{ enum_val.id.bumpy_case }} value);
+{%- endfor %}
+
+{%- for enum_val in model.enums %}
+std::string_view format_as({{ enum_val.id.bumpy_case }} value);
+{%- endfor %}
+
+{% for enum_val in model.enums %}
+NLOHMANN_JSON_SERIALIZE_ENUM({{ enum_val.id.bumpy_case }}, {
+    {%- for field in enum_val.fields %}
+    { {{ enum_val.id.bumpy_case }}_{{ field.bumpy_case }}, "{{ field.name }}"},
+    {%- endfor %}
+})
+{% endfor %}
+
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end("ENUMS", "_META") }}

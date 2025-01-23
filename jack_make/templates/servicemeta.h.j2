@@ -1,0 +1,76 @@
+{{ project.emit_cpp_header_guard_begin(service.id.name.as_str(), "_META") }}
+
+/// JACK
+#include <jack/service.h>
+
+/// Third Party
+#include <string_view>
+
+namespace aos::jack { class Engine; }
+
+{{ project.emit_cpp_namespace_begin() }}
+{{ service.emit_cpp_forward_decls(workspace) }}
+
+class {{ service.id.bumpy_case }};
+/******************************************************************************
+ * \class  {{ service.id.bumpy_case }}Meta
+ * \author jackmake
+ * \source {{ project.name }}.jack
+ ******************************************************************************/
+class {{ service.id.bumpy_case }}Meta : public aos::jack::Service
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ service.id.bumpy_case }}Meta(aos::jack::Engine& bdi, std::string_view name);
+    {{ service.id.bumpy_case }}Meta(const {{ service.id.bumpy_case}}Meta* other, std::string_view name);
+    virtual ~{{ service.id.bumpy_case }}Meta() { }
+
+    {{ service.id.bumpy_case }}Meta(const {{ service.id.bumpy_case }}Meta& other) = delete;
+    {{ service.id.bumpy_case }}Meta& operator=(const {{ service.id.bumpy_case }}Meta& other) = delete;
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    aos::jack::Service* clone(std::string_view name) const override;
+    {%- if workspace.get_actions_used_by_entity(service.id.as_ref()).len() > 0 %}
+
+    /// \note Actions
+    {%- for action in workspace.get_actions_used_by_entity(service.id.as_ref()) %}
+    virtual aos::jack::Event::Status on{{ action.id.bumpy_case }}({{ workspace.get_action_cpp_function_prototype_args(action).as_str() }}) = 0;
+    {%- endfor %}
+    {%- endif %}
+
+protected:
+    /// Link the action handler to this service's derived action handler.
+    void setupHandlers();
+
+public:
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    /// Create an instance of the service and return the service handle
+    /// @param proxy Create a proxy service that will forward events onto the bus to the real instance
+    static aos::jack::ServiceHandle create(aos::jack::Engine& bdi, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid = aos::jack::UniqueId::random());
+
+    /// Create an instance of the service and return a pointer to the service
+    /// @param proxy Create a proxy service that will forward events onto the bus to the real instance
+    static {{ service.id.bumpy_case }}* createInstance(aos::jack::Engine& bdi, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid = aos::jack::UniqueId::random());
+
+    /**************************************************************************
+     * Static Fields
+     **************************************************************************/
+    /// The name of the C++ class
+    static constexpr inline std::string_view CLASS_NAME = "{{ service.id.bumpy_case }}";
+
+    /// The name of this object in the JACK model
+    static constexpr inline std::string_view MODEL_NAME = "{{ service.id.qualified_name() }} Template";
+
+    /// \todo: This should use the qualified name so that the editor can
+    /// use nice names. But its been @harcoded to the bumpy case.
+    /// The name of this object in the simulator's ECS
+    static constexpr inline std::string_view COMPONENT_NAME = "{{ service.id.qualified_name() }} Component";
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(service.id.name.as_str(), "_META") }}

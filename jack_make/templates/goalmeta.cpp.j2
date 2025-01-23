@@ -1,0 +1,140 @@
+#include <{{ project.bumpy_case|lower }}/meta/goals/{{ goal.id.bumpy_case|lower }}meta.h>
+
+/// Project
+#include <{{ project.bumpy_case|lower }}/impl/goals/{{ goal.id.bumpy_case|lower }}impl.h>
+{%- for msg in goal.query_messages %}
+#include <{{ workspace.lookup_model_with_id(msg).project.bumpy_case|lower }}/meta/messages/{{ msg.bumpy_case|lower }}meta.h>
+{%- endfor %}
+
+/// JACK
+#include <jack/beliefquery.h>
+#include <jack/beliefcontext.h>
+#include <jack/corelib.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ goal.id.bumpy_case }}Meta::{{ goal.id.bumpy_case }}Meta()
+: aos::jack::Goal("{{ goal.id.qualified_name() }}")
+{
+}
+
+{{ goal.id.bumpy_case }}Meta::{{ goal.id.bumpy_case }}Meta(std::string_view name)
+: aos::jack::Goal(name)
+{
+}
+
+{{ goal.id.bumpy_case }}Meta::{{ goal.id.bumpy_case }}Meta(const {{ goal.id.bumpy_case }}Meta *other)
+: aos::jack::Goal(other)
+{
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+aos::jack::Goal* {{ goal.id.bumpy_case }}Meta::clone(JACK_CALL_SITE_ARGS_NO_TAIL_COMMA) const
+{
+    /// Ensures all the functions are copied over to the cloned goal
+    {{ goal.id.bumpy_case }}* result = aos::jack::globalHeapAllocator.newInternal<{{ goal.id.bumpy_case }}>(JACK_CALL_SITE_INPUT static_cast<const {{ goal.id.bumpy_case }}*>(this));
+    {%- if goal.precondition.custom %}
+
+    /// Hook the pre callback in the normal BeliefQuery
+    aos::jack::BeliefQuery preQuery([result](const aos::jack::BeliefContext& context) {
+        {%- if goal.query_messages.len() > 0 %}
+        if (!{{ goal.id.bumpy_case }}Meta::beliefContextValid(context, "Precondition")) {
+            return false;
+        }
+        {%- endif %}
+
+        {%- for msg in goal.query_messages %}
+        const auto {{ msg.bumpy_case|lower }} = context.getMessageAsPtr<const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>();
+        {%- endfor %}
+        return result->pre(context{% for msg in goal.query_messages %}, *{{ msg.bumpy_case|lower }}{% endfor %});
+    });
+    result->setPrecondition(preQuery);
+    {%- endif %}
+    {%- if goal.dropcondition.custom %}
+
+    /// Hook the drop callback in the normal BeliefQuery
+    aos::jack::BeliefQuery dropQuery([result](const aos::jack::BeliefContext& context) {
+        {%- if goal.query_messages.len() > 0 %}
+        if (!{{ goal.id.bumpy_case }}Meta::beliefContextValid(context, "Drop when")) {
+            return false;
+        }
+        {%- endif %}
+
+        {%- for msg in goal.query_messages %}
+        const auto {{ msg.bumpy_case|lower }} = context.getMessageAsPtr<const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>();
+        {%- endfor %}
+        return result->dropWhen(context{% for msg in goal.query_messages %}, *{{ msg.bumpy_case|lower }}{% endfor %});
+    });
+    result->setDropWhen(dropQuery);
+    {%- endif %}
+    {%- if goal.satisfied.custom %}
+
+    /// Hook the satisfied callback in the normal BeliefQuery
+    aos::jack::BeliefQuery satisfiedQuery([result](const aos::jack::BeliefContext& context) {
+        {%- if goal.query_messages.len() > 0 %}
+        if (!{{ goal.id.bumpy_case }}Meta::beliefContextValid(context, "Satisfied")) {
+            return false;
+        }
+        {%- endif %}
+
+        {%- for msg in goal.query_messages %}
+        const auto {{ msg.bumpy_case|lower }} = context.getMessageAsPtr<const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>();
+        {%- endfor %}
+        return result->satisfied(context{% for msg in goal.query_messages %}, *{{ msg.bumpy_case|lower }}{% endfor %});
+    });
+    result->setSatisfied(satisfiedQuery);
+    {%- endif %}
+    {%- if goal.heuristic %}
+
+    /// Hook the heuristic callback in the normal BeliefQuery
+    auto heuristicQuery([result](const aos::jack::BeliefContext& context) {
+        {%- if goal.query_messages.len() > 0 %}
+        if (!{{ goal.id.bumpy_case }}Meta::beliefContextValid(context, "Heuristic")) {
+            return std::numeric_limits<float>::max();
+        }
+        {%- endif %}
+
+        {%- for msg in goal.query_messages %}
+        const auto {{ msg.bumpy_case|lower }} = context.getMessageAsPtr<const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>();
+        {%- endfor %}
+        return result->heuristic(context{% for msg in goal.query_messages %}, *{{ msg.bumpy_case|lower }}{% endfor %});
+    });
+    result->setHeuristic(heuristicQuery);
+    {%- endif %}
+
+    return result;
+}
+
+/******************************************************************************
+ * Static Functions
+ ******************************************************************************/
+{%- if goal.query_messages.len() > 0 %}
+bool {{ goal.id.bumpy_case }}Meta::beliefContextValid(const aos::jack::BeliefContext& context, std::string_view prefix)
+{
+    bool valid = true
+    {%- for msg in goal.query_messages %}
+    && context.getMessageAsPtr<{{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>()
+    {%- endfor %}
+    ;
+
+    if (!valid) {
+        aos::jack::ThreadScratchAllocator scratch = aos::jack::getThreadScratchAllocator(nullptr);
+        auto builder                              = aos::jack::StringBuilder(scratch.arena);
+        builder.append(FMT_STRING("{} query cannot be invoked due to missing message from context [goal={{ goal.id.qualified_name() }}, agent={}, beliefsets=[\n"), prefix, context.agentContextOwner());
+
+        {%- for msg in goal.query_messages %}
+        builder.append(FMT_STRING("    {{ msg.qualified_name() }}={}\n"), context.getMessageAsPtr<{{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}>() ? "available" : "missing");
+        {%- endfor %}
+        builder.appendRef("]");
+        JACK_WARNING("{}", builder.toStringArena(scratch.arena));
+        return false;
+    }
+
+    return true;
+}
+{%- endif %}
+{{ project.emit_cpp_namespace_end() }}

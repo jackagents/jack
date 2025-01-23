@@ -1,0 +1,57 @@
+#include <{{ project.bumpy_case|lower}}/impl/goals/{{ goal.id.bumpy_case|lower }}impl.h>
+
+/// JACK
+#include <jack/beliefcontext.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ goal.id.bumpy_case }}::{{ goal.id.bumpy_case }}(std::string_view name)
+: {{ goal.id.bumpy_case }}Meta(name)
+{
+}
+
+{{ goal.id.bumpy_case }}::{{ goal.id.bumpy_case }}(const {{ goal.id.bumpy_case }}* other)
+: {{ goal.id.bumpy_case }}Meta(other)
+{
+}
+
+{%- if goal.precondition.custom || goal.dropcondition.custom || goal.satisfied.custom || goal.heuristic %}
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+{%- if goal.precondition.custom %}
+
+bool {{ goal.id.bumpy_case }}::pre(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) {
+    /// Pre Condition: Can this goal can be pursued based on the given context
+    return true;
+}
+{%- endif %}
+
+{%- if goal.dropcondition.custom %}
+
+bool {{ goal.id.bumpy_case }}::dropWhen(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) {
+    /// Drop Condition: Can this goal can be dropped based on the given context
+    /// \todo: automatically generated
+    return true;
+}
+{%- endif %}
+
+{%- if goal.satisfied.custom %}
+
+bool {{ goal.id.bumpy_case }}::satisfied(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) {
+    /// Satisfied: Is this goal satisfied based on the given context
+    return false;
+}
+{%- endif %}
+
+{%- if goal.heuristic %}
+
+float {{ goal.id.bumpy_case }}::heuristic(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) {
+    /// Heuristic: Estimated cost to complete this goal
+    return 0.0f;
+}
+{%- endif %}
+{%- endif %}
+{{ project.emit_cpp_namespace_end() }}

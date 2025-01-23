@@ -1,0 +1,71 @@
+#include <{{ project.bumpy_case|lower}}/meta/services/{{ service.id.bumpy_case|lower }}meta.h>
+
+/// Project
+#include <{{ project.bumpy_case|lower }}/impl/services/{{ service.id.bumpy_case|lower }}impl.h>
+{%- for msg in workspace.get_messages_used_by_entity(service.id.as_ref()) %}
+#include <{{ workspace.lookup_model_with_id(msg.id.as_ref()).project.bumpy_case|lower }}/meta/messages/{{ msg.id.bumpy_case|lower }}meta.h>
+{%- endfor %}
+
+/// JACK
+#include <jack/corelib.h>
+#include <jack/engine.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ service.id.bumpy_case }}Meta::{{ service.id.bumpy_case }}Meta(aos::jack::Engine& bdi, std::string_view name)
+: aos::jack::Service(bdi, name)
+{
+    setupHandlers();
+}
+
+{{ service.id.bumpy_case }}Meta::{{ service.id.bumpy_case }}Meta(const {{ service.id.bumpy_case }}Meta* other, std::string_view name)
+: aos::jack::Service(other, name)
+{
+    setupHandlers();
+}
+
+/******************************************************************************
+ * Action Handlers
+ ******************************************************************************/
+aos::jack::Service* {{ service.id.bumpy_case }}Meta::clone(std::string_view name) const
+{
+    return JACK_NEW({{ service.id.bumpy_case }}, static_cast<const {{ service.id.bumpy_case }}*>(this), name);
+}
+
+void {{ service.id.bumpy_case }}Meta::setupHandlers()
+{
+    {%- for action in workspace.get_actions_used_by_entity(service.id.as_ref()) %}
+    addActionHandler("{{ action.id.qualified_name() }}", [](aos::jack::Service& service, [[maybe_unused]] aos::jack::Message& in, [[maybe_unused]] aos::jack::Message& out, aos::jack::ActionHandle handle)
+    {
+        {%- if workspace.get_message_fields(action.request.as_ref()).len() > 0 %}
+        const {{ action.request.bumpy_case }}& request = static_cast<{{ action.request.bumpy_case }}&>(in);
+        {%- endif %}
+        {%- if workspace.get_message_fields(action.reply.as_ref()).len() > 0 %}
+        // {{ workspace.get_message(action.reply.as_ref()).unwrap().to_cpp_type(workspace) }} reply;
+        {{ action.reply.bumpy_case }}& reply = static_cast<{{ action.reply.bumpy_case }}&>(out);
+        {%- endif %}
+        aos::jack::Event::Status result = static_cast<{{ service.id.bumpy_case }}Meta&>(service).on{{ action.id.bumpy_case }}({{ workspace.get_action_cpp_function_args(action).as_str() }});
+        return result;
+    });
+    {%- endfor %}
+}
+
+/**************************************************************************
+ * Static Functions
+ **************************************************************************/
+aos::jack::ServiceHandle {{ service.id.bumpy_case }}Meta::create(aos::jack::Engine& bdi, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid)
+{
+    auto result = bdi.createService(MODEL_NAME, name, proxy, uuid);
+    JACK_ASSERT(result.valid());
+    return result;
+}
+
+{{ service.id.bumpy_case }}* {{ service.id.bumpy_case }}Meta::createInstance(aos::jack::Engine& bdi, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid)
+{
+    auto* result = dynamic_cast<{{ service.id.bumpy_case }}*>(bdi.createServiceInstance(MODEL_NAME, name, proxy, uuid));
+    JACK_ASSERT(result);
+    return result;
+}
+{{ project.emit_cpp_namespace_end() }}

@@ -1,0 +1,25 @@
+{
+   "templates":[
+        {%- for entity in workspace.entities() %}
+        {
+            "name": "{{ entity.id.bumpy_case }}",
+            "components":[
+                {%- if entity.agent %}
+                    "AgentComponent"{%- if entity.messages.len() > 0 || entity.services.len() > 0 %},{% endif %}
+                {%- endif %}
+                {%- for messages in entity.messages %}
+                    "{{ messages.qualified_name() }}"{% if !loop.last || entity.services.len() > 0 %},{% endif %}
+                {%- endfor %}
+                {%- for service in entity.services %}
+                    "{{ service.qualified_name() }} Component"{%- if !loop.last %},{% endif %}
+                {%- endfor %}
+            ],
+            "children":[
+                {%- for child in entity.children %}
+                    "{{ child.name }}"{%- if !loop.last %},{% endif %}
+                {%- endfor %}
+            ]
+        }{%- if !loop.last %},{% endif %}
+        {%- endfor %}
+   ]
+}

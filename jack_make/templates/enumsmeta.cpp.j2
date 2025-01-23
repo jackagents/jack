@@ -1,0 +1,26 @@
+#include <{{ project.bumpy_case|lower }}/meta/{{ project.bumpy_case|lower }}enumsmeta.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+{%- for enum_val in model.enums %}
+
+std::string_view {{ enum_val.id.bumpy_case }}String({{ enum_val.id.bumpy_case }} value)
+{
+    switch (value) {
+        {%- for field in enum_val.fields %}
+        case {{ enum_val.id.bumpy_case}}_{{ field.bumpy_case }}: return std::string_view("{{ field.name }}");
+        {%- endfor %}
+    }
+    return std::string_view("ENUM_OUT_OF_BOUNDS_{{ enum_val.id.name|upper }}");
+}
+{%- endfor %}
+
+{%- for enum_val in model.enums %}
+
+std::string_view format_as({{ enum_val.id.bumpy_case }} value)
+{
+    std::string_view result = {{ enum_val.id.bumpy_case}}String(value);
+    return result;
+}
+{%- endfor %}
+
+{{ project.emit_cpp_namespace_end() }}

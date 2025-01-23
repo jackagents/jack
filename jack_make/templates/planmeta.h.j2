@@ -1,0 +1,69 @@
+{{ project.emit_cpp_header_guard_begin(plan.id.name.as_str(), "_META") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// JACK
+#include <jack/plan.h>
+
+/// Third Party
+#include <string_view>
+
+namespace aos::jack
+{
+class BeliefContext;
+}
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * \class  {{ plan.id.bumpy_case }}Meta
+ * \author jackmake
+ * \source {{ project.bumpy_case }}.jack
+ ******************************************************************************/
+class {{ plan.id.bumpy_case }}Meta : public aos::jack::Plan
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ plan.id.bumpy_case }}Meta();
+    {{ plan.id.bumpy_case }}Meta(std::string_view name);
+    {{ plan.id.bumpy_case }}Meta(const {{ plan.id.bumpy_case }}Meta *other);
+    virtual ~{{ plan.id.bumpy_case }}Meta() = default;
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    aos::jack::Plan* clone(JACK_CALL_SITE_ARGS_NO_TAIL_COMMA) const override;
+
+    {%- if plan.precondition.custom || plan.dropcondition.custom || plan.effects %}
+    {%- if plan.precondition.custom %}
+
+    /// @return True for the plan to be selected and executed, false otherwise.
+    virtual bool pre(const aos::jack::BeliefContext& context) = 0;
+    {%- endif %}
+
+    {%- if plan.dropcondition.custom %}
+
+    /// @return True for the plan to be dropped, false otherwise.
+    virtual bool dropWhen(const aos::jack::BeliefContext& context) = 0;
+    {%- endif %}
+
+    {%- if plan.effects %}
+
+    /// Models the expected effects of this plan on the context used to allow
+    /// JACK to understand the consequences of completing this plan.
+    virtual void effects(aos::jack::BeliefContext& context) = 0;
+    {%- endif %}
+    {%- endif %}
+
+    /**************************************************************************
+     * Static Fields
+     **************************************************************************/
+    /// The name of the C++ class
+    static constexpr inline std::string_view CLASS_NAME = "{{ plan.id.bumpy_case }}";
+
+    /// The name of this object in the JACK model
+    static constexpr inline std::string_view MODEL_NAME = "{{ plan.id.qualified_name() }}";
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(plan.id.name.as_str(), "_META") }}

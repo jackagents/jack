@@ -1,0 +1,95 @@
+{{ project.emit_cpp_header_guard_begin(agent.id.name.as_str(), "_META") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// JACK
+#include <jack/{% if is_team %}team{% else %}agent{% endif %}.h>
+#include <jack/handles.h> /// AgentHandle
+#include <jack/promise.h>
+#include <jack/engine/uuid.h>
+#include <jack/events/event.h>
+
+/// Third Party
+#include <string_view>
+
+namespace aos::jack
+{
+class Engine;
+}
+
+{{ project.emit_cpp_namespace_begin() }}
+{%- if workspace.get_messages_used_by_entity(agent.id.as_ref()).len() > 0 %}
+{% for msg in workspace.get_messages_used_by_entity(agent.id.as_ref()) %}
+class {{ msg.id.bumpy_case }};
+{%- endfor %}
+{%- endif %}
+class {{ agent.id.bumpy_case }};
+
+/******************************************************************************
+ * \class  {{ agent.id.bumpy_case }}Meta
+ * \author jackmake
+ * \source {{ project.name }}.jack
+ ******************************************************************************/
+class {{ agent.id.bumpy_case }}Meta : public aos::jack::{% if is_team %}Team{% else %}Agent{% endif %}
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ agent.id.bumpy_case }}Meta(aos::jack::Engine& bdi, std::string_view name);
+    {{ agent.id.bumpy_case }}Meta(const {{ agent.id.bumpy_case }}Meta* other, std::string_view name);
+    virtual ~{{ agent.id.bumpy_case }}Meta() {}
+
+    {{ agent.id.bumpy_case }}Meta(const {{ agent.id.bumpy_case }}Meta& other) = delete;
+    {{ agent.id.bumpy_case }}Meta& operator=(const {{ agent.id.bumpy_case }}Meta& other) = delete;
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    aos::jack::Agent* clone(std::string_view name) const override;
+    {%- if workspace.get_actions_used_by_entity(agent.id.as_ref()).len() > 0 %}
+
+    /// \note Actions
+    {%- for action in workspace.get_actions_used_by_entity(agent.id.as_ref()) %}
+    virtual aos::jack::Event::Status on{{ action.id.bumpy_case }}({{ workspace.get_action_cpp_function_prototype_args(action).as_str() }}) = 0;
+    {%- endfor %}
+    {%- endif %}
+    {%- if agent.goals.len() > 0 %}
+
+    /// \note Goals
+    {%- for goal in agent.goals %}
+    {%- let goal_obj = workspace.get_goal(goal.id.as_ref()).unwrap() %}
+    {%- if goal_obj.message.name.len() > 0 %}
+    aos::jack::GoalPursue pursue{{ goal.id.as_ref().bumpy_case }}(std::shared_ptr<{{ goal_obj.message.bumpy_case }}> message, aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id = aos::jack::UniqueId::random());
+    aos::jack::GoalPursue pursue{{ goal.id.as_ref().bumpy_case }}(std::unique_ptr<{{ goal_obj.message.bumpy_case }}>&& message, aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id = aos::jack::UniqueId::random());
+    {%- else %}
+    aos::jack::GoalPursue pursue{{ goal.id.as_ref().bumpy_case }}(aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id = aos::jack::UniqueId::random());
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+
+protected:
+    /// Link the action handler to this agent's derived action handler.
+    void setupHandlers();
+
+public:
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    /// Create an instance of the agent and return the agent handle
+    static aos::jack::AgentHandle create(aos::jack::Engine& bdi, std::string_view name, const aos::jack::UniqueId& uuid = aos::jack::UniqueId::random());
+
+    /// Create an instance of the agent and return a pointer to the agent
+    static {{ agent.id.bumpy_case }}* createInstance(aos::jack::Engine& bdi, std::string_view name, const aos::jack::UniqueId& uuid = aos::jack::UniqueId::random());
+
+    /**************************************************************************
+     * Static Fields
+     **************************************************************************/
+    /// The name of the C++ class
+    static constexpr inline std::string_view CLASS_NAME = "{{ agent.id.bumpy_case }}";
+
+    /// The name of this object in the JACK model
+    static constexpr inline std::string_view MODEL_NAME = "{{ agent.id.qualified_name() }} Template";
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(agent.id.name.as_str(), "_META") }}

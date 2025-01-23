@@ -1,0 +1,61 @@
+#include <{{ project.bumpy_case|lower }}/meta/plans/{{ plan.id.bumpy_case|lower }}meta.h>
+
+/// Project
+#include <{{ project.bumpy_case|lower }}/impl/plans/{{ plan.id.bumpy_case|lower }}impl.h>
+
+/// JACK
+#include <jack/corelib.h>
+#include <jack/beliefquery.h>
+#include <jack/beliefcontext.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ plan.id.bumpy_case}}Meta::{{ plan.id.bumpy_case }}Meta()
+: aos::jack::Plan("{{ plan.id.qualified_name() }}")
+{
+}
+
+{{ plan.id.bumpy_case}}Meta::{{ plan.id.bumpy_case }}Meta(std::string_view name)
+: aos::jack::Plan(name)
+{
+}
+
+{{ plan.id.bumpy_case}}Meta::{{ plan.id.bumpy_case }}Meta(const {{ plan.id.bumpy_case }}Meta *other)
+: aos::jack::Plan(other)
+{
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+aos::jack::Plan* {{ plan.id.bumpy_case}}Meta::clone(JACK_CALL_SITE_ARGS_NO_TAIL_COMMA) const
+{
+    {{ plan.id.bumpy_case }}* result = aos::jack::globalHeapAllocator.newInternal<{{ plan.id.bumpy_case }}>(JACK_CALL_SITE_INPUT static_cast<const {{ plan.id.bumpy_case }}*>(this));
+    {%- if plan.precondition.custom %}
+
+    aos::jack::BeliefQuery query([result](const aos::jack::BeliefContext& context) {
+        return result->pre(context);
+    });
+    result->setPrecondition(query);
+    {%- endif %}
+
+    {%- if plan.dropcondition.custom %}
+
+    aos::jack::BeliefQuery dropQuery([result](const aos::jack::BeliefContext& context) {
+        return result->dropWhen(context);
+    });
+    result->setDropWhen(dropQuery);
+    {%- endif %}
+
+    {%- if plan.effects -%}
+
+    result->setEffects([result](aos::jack::BeliefContext& context) {
+        result->effects(context);
+    });
+    {%- endif %}
+
+    return result;
+}
+{{ project.emit_cpp_namespace_end() }}

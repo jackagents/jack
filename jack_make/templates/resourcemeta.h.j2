@@ -1,0 +1,36 @@
+{{ project.emit_cpp_header_guard_begin(resource.id.name.as_str(), "_META") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// JACK
+#include <jack/engine.h>
+#include <jack/builders/resourcebuilder.h>
+
+/// Third Party
+#include <string_view>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * \class  {{ resource.id.bumpy_case }}
+ * \author jackmake
+ * \source {{ project.bumpy_case }}.jack
+ ******************************************************************************/
+class {{ resource.id.bumpy_case }}Meta
+{
+public:
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    static aos::jack::ResourceBuilder init(aos::jack::Engine& bdi)
+    {
+        return bdi.resource("{{ resource.id.qualified_name() }}")
+                  .min({{ resource.min }})
+                  .max({{ resource.max }})
+                  .commit();
+    }
+
+    /// The name of the class
+    static constexpr inline std::string_view CLASS_NAME = "{{ resource.id.qualified_name() }}";
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(resource.id.name.as_str(), "_META") }}
