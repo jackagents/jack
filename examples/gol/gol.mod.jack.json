@@ -1,0 +1,322 @@
+{
+    "project": {
+        "name": "gol",
+        "namespaces": [],
+        "major_version": "0",
+        "minor_version": "6",
+        "patch_version": "0",
+        "generator": "JACK Editor",
+        "modules": [],
+        "search_paths": []
+    },
+    "enums": [],
+    "teams": [],
+    "agents": [
+        {
+            "uuid": "bc2f9119-81d7-4b35-9bd3-f80a55db5c30",
+            "name": "Game Of Life Agent",
+            "module": "gol",
+            "note": "",
+            "resources": [],
+            "message_handlers": [],
+            "action_handlers": [],
+            "beliefs": [
+                {
+                    "uuid": "ae0c3a3e-ded1-4e94-957b-c9df5756b073",
+                    "name": "Cell Info",
+                    "module": "gol"
+                }
+            ],
+            "goals": [
+                {
+                    "uuid": "bd03e99e-4ff6-4623-9e40-4586b614e469",
+                    "name": "Model Life",
+                    "module": "gol",
+                    "startup_goal": true,
+                    "startup_tactic": {
+                        "uuid": "",
+                        "name": "",
+                        "module": ""
+                    }
+                }
+            ],
+            "plans": [
+                {
+                    "uuid": "08a1126d-d41e-4e40-9459-6e0780f67534",
+                    "name": "Live Plan",
+                    "module": "gol"
+                },
+                {
+                    "uuid": "dd3af9b1-df49-470b-8977-69a9916daf22",
+                    "name": "Die Plan",
+                    "module": "gol"
+                }
+            ],
+            "roles": [],
+            "services": [
+                {
+                    "uuid": "b42bfac2-58a2-4f72-a8a7-1c8e06070896",
+                    "name": "Game Of Life Service",
+                    "module": "gol"
+                }
+            ]
+        }
+    ],
+    "tactics": [],
+    "roles": [],
+    "resources": [],
+    "actions": [
+        {
+            "uuid": "652b43f0-da16-445c-abb2-37b5f369fd7c",
+            "name": "Live Action",
+            "module": "gol",
+            "note": "",
+            "request": {
+                "uuid": "22dc2b55-05a6-472a-8eb7-504900623297",
+                "name": "Cell Command",
+                "module": "gol"
+            },
+            "reply": {
+                "uuid": "",
+                "name": "",
+                "module": ""
+            },
+            "feedback": {
+                "uuid": "",
+                "name": "",
+                "module": ""
+            }
+        },
+        {
+            "uuid": "f36ddbb3-f340-4320-b5ff-3d6a9de8dccd",
+            "name": "Die Action",
+            "module": "gol",
+            "note": "",
+            "request": {
+                "uuid": "22dc2b55-05a6-472a-8eb7-504900623297",
+                "name": "Cell Command",
+                "module": "gol"
+            },
+            "reply": {
+                "uuid": "",
+                "name": "",
+                "module": ""
+            },
+            "feedback": {
+                "uuid": "",
+                "name": "",
+                "module": ""
+            }
+        }
+    ],
+    "goals": [
+        {
+            "uuid": "bd03e99e-4ff6-4623-9e40-4586b614e469",
+            "name": "Model Life",
+            "module": "gol",
+            "note": "",
+            "query_messages": [],
+            "precondition": {
+                "custom": false,
+                "query": ""
+            },
+            "dropcondition": {
+                "custom": false,
+                "query": ""
+            },
+            "satisfied": {
+                "custom": false,
+                "query": ""
+            },
+            "heuristic": false,
+            "resources": [],
+            "message": {
+                "uuid": "",
+                "name": "",
+                "module": ""
+            }
+        }
+    ],
+    "plans": [
+        {
+            "uuid": "08a1126d-d41e-4e40-9459-6e0780f67534",
+            "name": "Live Plan",
+            "module": "gol",
+            "note": "",
+            "query_messages": [],
+            "precondition": {
+                "custom": true,
+                "query": "NOT is_alive AND population == 3"
+            },
+            "dropcondition": {
+                "custom": false,
+                "query": ""
+            },
+            "effects": false,
+            "handles": {
+                "uuid": "bd03e99e-4ff6-4623-9e40-4586b614e469",
+                "name": "Model Life",
+                "module": "gol"
+            },
+            "tasks": [
+                {
+                    "id": "66a80c7a-9a08-48f7-811e-51cf65934f40",
+                    "note": "",
+                    "type": "action",
+                    "action": {
+                        "uuid": "652b43f0-da16-445c-abb2-37b5f369fd7c",
+                        "name": "Live Action",
+                        "module": "gol"
+                    },
+                    "async": false,
+                    "mappings": []
+                }
+            ],
+            "edges": [
+                {
+                    "condition": "true",
+                    "sourceid": "start",
+                    "targetid": "66a80c7a-9a08-48f7-811e-51cf65934f40"
+                },
+                {
+                    "condition": "true",
+                    "sourceid": "66a80c7a-9a08-48f7-811e-51cf65934f40",
+                    "targetid": "end"
+                }
+            ]
+        },
+        {
+            "uuid": "dd3af9b1-df49-470b-8977-69a9916daf22",
+            "name": "Die Plan",
+            "module": "gol",
+            "note": "",
+            "query_messages": [],
+            "precondition": {
+                "custom": true,
+                "query": "is_alive AND (population < 2 OR population > 3)"
+            },
+            "dropcondition": {
+                "custom": false,
+                "query": ""
+            },
+            "effects": false,
+            "handles": {
+                "uuid": "bd03e99e-4ff6-4623-9e40-4586b614e469",
+                "name": "Model Life",
+                "module": "gol"
+            },
+            "tasks": [
+                {
+                    "id": "865d82ca-bda2-46b1-88cd-c7c83badfb3f",
+                    "note": "",
+                    "type": "action",
+                    "action": {
+                        "uuid": "f36ddbb3-f340-4320-b5ff-3d6a9de8dccd",
+                        "name": "Die Action",
+                        "module": "gol"
+                    },
+                    "async": false,
+                    "mappings": []
+                }
+            ],
+            "edges": [
+                {
+                    "condition": "true",
+                    "sourceid": "start",
+                    "targetid": "865d82ca-bda2-46b1-88cd-c7c83badfb3f"
+                },
+                {
+                    "condition": "true",
+                    "sourceid": "865d82ca-bda2-46b1-88cd-c7c83badfb3f",
+                    "targetid": "end"
+                }
+            ]
+        }
+    ],
+    "messages": [
+        {
+            "uuid": "22dc2b55-05a6-472a-8eb7-504900623297",
+            "name": "Cell Command",
+            "module": "gol",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "cell_index",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        },
+        {
+            "uuid": "ae0c3a3e-ded1-4e94-957b-c9df5756b073",
+            "name": "Cell Info",
+            "module": "gol",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "cell_index",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                },
+                {
+                    "name": "population",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                },
+                {
+                    "name": "is_alive",
+                    "note": "",
+                    "type": "Bool",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        }
+    ],
+    "services": [
+        {
+            "uuid": "b42bfac2-58a2-4f72-a8a7-1c8e06070896",
+            "name": "Game Of Life Service",
+            "module": "gol",
+            "note": "",
+            "action_handlers": [
+                {
+                    "uuid": "652b43f0-da16-445c-abb2-37b5f369fd7c",
+                    "name": "Live Action",
+                    "module": "gol"
+                },
+                {
+                    "uuid": "f36ddbb3-f340-4320-b5ff-3d6a9de8dccd",
+                    "name": "Die Action",
+                    "module": "gol"
+                }
+            ],
+            "topics": [
+                {
+                    "name": "cell info publisher",
+                    "message": {
+                        "uuid": "ae0c3a3e-ded1-4e94-957b-c9df5756b073",
+                        "name": "Cell Info",
+                        "module": "gol"
+                    }
+                }
+            ]
+        }
+    ],
+    "entities": [],
+    "events": []
+}
