@@ -1,0 +1,72 @@
+2022-11-16 v0.4.12
+    - Added websocket bus adapter allowing a jack node to act at a web server for
+      web clients. It uses the same protocol as the current dds bus adapters.
+
+2022-05-01 v0.4.0
+    - All-encompassing engine upgrade deprecating many old APIs and introducing
+      new APIs. For all intents and purposes, prior projects are not forward
+      compatible and should be considered legacy unless rebuilt in the new
+      engine.
+    - Add Tactics which filter the available set of plans for Agents
+    - New memory management tools and leak tracking
+    - Redesigned distribution hooks for communication with remote JACK nodes via
+      Kafka and RTI DDS.
+    - Redesigned message types for remote communication
+    - Services which allow modelling of entities that produce percept and
+      influence the environment.
+    - Removal of flatbuffers from the engine
+    - Many bug fixes and improve team and agent collaboration
+
+2021-10-XX v0.3.2
+    - Add an internal clock into the Engine for book-keeping of timing allowing.
+      the engine to be paused and resumed without timed events batching up in
+      the event queue.
+    - Track failed goal delegations in the planner with
+      std::numeric_limits<float>::max().
+    - Inject maintenance goals when a resource is violated into the planner.
+    - Add transitioning from a failed plan within an Agent's goal executor.
+    - Allow the engine's run-time to be reset to its initial state.
+    - Allow active desires to be queried from an agent.
+    - Dirtied resources now trigger a new schedule for the agent.
+    - Resolve resource dependencies during execution of intentions that are
+      scheduled in parallel with each other.
+    - Dropping goals will now also recursively drop all sub-goals.
+    - Add shared beliefsets between the team and the members by specifying the
+      beliefsets in the roles and the permission to read and write from/to the
+      team.
+    - Team members that fail a goal will now drop the goal to allow reallocation
+      to another team member instead of retrying infinitely.
+    - Add a cross-compiling toolchain for the Zig compiler.
+    - Add checks to ensure an agent template must exist before instantiation.
+    - Prevent auctions starting if no valid team members are available in the
+      team.
+    - Fix bug that schedules a desire twice due to a race condition between
+      a team finishing the delegated desire and a member finishing the desire.
+    - Improve performance by caching team delegates per tick.
+    - Improve performance by generating UUID's more efficiently.
+    - Allow mapping of goal parameters from parameters in the belief context
+      with a different name.
+    - Deprecate the old jack-make tool with a new Rust version that is more
+      robust and provides compile time checking of JSON.
+
+2021-02-11 v0.3.1
+    - Add support for maintenance goals, goals that are triggered when resources
+      are violated.
+      Maintenance goals can be associated with an agent in the AgentBuilder
+      using the maintains(...) function
+    - Make all Agent state checking functions inline const
+    - Update BeliefContext's isViolating(...) to hasResourceViolation(...), it
+      now returns the list of resources violated
+    - Rename Agent's isPending(...) to isWaitingForAuctions(...) which more
+      accurately describes the Agent's state
+    - Improve documentation across header files
+    - Remove final qualifier on Plan's clone() causing JACK generated projects
+      to fail
+    - Fix re-scheduling on failed to apply percepts on agents
+    - Dropping desires are dropped immediately instead of queuing causing
+      scheduling with invalid state
+    - Perform goals are set to be considered only once during forward planning
+      in the scheduler
+
+2020-12-16 v0.3.0
+    - Initial release

@@ -1,0 +1,43 @@
+**/target
+/build*
+/install
+/log
+CMakeLists.txt.user
+__pycache__
+build/
+doc/html
+doc/latex
+tools/kafka/bin
+
+# VS code config
+.vscode
+
+# Vim Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Persistent undo
+[._]*.un~
+
+# Rust
+src/make/target
+
+# Session
+Session.vim
+
+# Temporary
+.netrwhist
+*~
+*.bak
+*.pyc
+*.swp
+*.user
+
+# Auto-generated tag files
+tags
+
+# Persistent undo
+[._]*.un~

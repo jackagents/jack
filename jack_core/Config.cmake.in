@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+list(APPEND CMAKE_MODULE_PATH "@PACKAGE_cmakeModulesDir@")
+list(APPEND CMAKE_PREFIX_PATH "${PACKAGE_PREFIX_DIR}")
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(concurrentqueue)
+find_dependency(ZLIB)
+find_dependency(uWebSockets)
+find_dependency(Tracy)
+find_dependency(fmt)
+
+
+# @note This is required for Tracy?
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_Targets.cmake")

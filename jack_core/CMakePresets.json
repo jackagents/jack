@@ -1,0 +1,150 @@
+{
+    "version": 5,
+    "configurePresets": [
+        {
+            "name":        "commonConfigFlags",
+            "hidden":      true,
+            "description": "Common flags for CMake config",
+            "binaryDir":   "build/${presetName}",
+            "installDir":  "build/${presetName}/install",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS":               false,
+                "JACK_ALLOCATION_TRACKING":        true,
+                "JACK_SLOW_DEBUG_CHECKS":          true,
+                "JACK_WITH_ASAN":                  true,
+                "JACK_WITH_CYCLONE_DDS":           false,
+                "JACK_WITH_GCC_CXX03_ABI":         false,
+                "JACK_WITH_JSON_ADAPTER":          false,
+                "JACK_WITH_RTI_DDS":               false,
+                "JACK_WITH_TRACY":                 false,
+                "JACK_WITH_WEBSOCKETS":            false,
+                "CMAKE_EXPORT_COMPILE_COMMANDS":   true,
+                "CONNEXTDDS_DIR":                  "$ENV{NDDSHOME}",
+                "FETCHCONTENT_FULLY_DISCONNECTED": false
+            }
+        },
+        {
+            "name":        "busConfigFlags",
+            "hidden":      true,
+            "description": "Flags for enabling bus features",
+            "cacheVariables": {
+                "JACK_WITH_RTI_DDS":      false,
+                "JACK_WITH_WEBSOCKETS":   true,
+                "JACK_WITH_CYCLONE_DDS":  false,
+                "JACK_WITH_JSON_ADAPTER": true
+            }
+        },
+        {
+            "name":        "debugConfigFlags",
+            "hidden":      true,
+            "inherits":    ["commonConfigFlags"],
+            "description": "Common flags for debug CMake config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name":        "releaseConfigFlags",
+            "inherits":    ["commonConfigFlags"],
+            "displayName": "Release Config Flags",
+            "hidden":      true,
+            "description": "Common flags for release CMake config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "ReleaseWithDebInfo",
+                "JACK_WITH_ASAN": false
+            }
+        },
+        {
+            "name":        "debugMakefile",
+            "inherits":    ["debugConfigFlags"],
+            "displayName": "Debug (Unix Makefiles)",
+            "description": "Default debug build using Unix Makefiles",
+            "generator":   "Unix Makefiles",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "releaseMakefile",
+            "inherits":    ["releaseConfigFlags"],
+            "displayName": "Release (Unix Makefiles)",
+            "description": "Default release build using Unix Makefiles",
+            "generator":   "Unix Makefiles",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "debugBusMakefile",
+            "inherits":    ["busConfigFlags", "debugConfigFlags"],
+            "displayName": "Debug+Bus (Unix Makefiles)",
+            "description": "Default debug build w/ bus features using Unix Makefiles",
+            "generator":   "Unix Makefiles",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "releaseBusMakefile",
+            "inherits":    ["busConfigFlags", "releaseConfigFlags"],
+            "displayName": "Release+Bus (Unix Makefiles)",
+            "description": "Default release build w/ bus features using Unix Makefiles",
+            "generator":   "Unix Makefiles",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "debugNinja",
+            "inherits":    ["debugConfigFlags"],
+            "displayName": "Debug (Ninja)",
+            "description": "Default debug build using Ninja",
+            "generator":   "Ninja",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "releaseNinja",
+            "inherits":    ["releaseConfigFlags"],
+            "displayName": "Release (Ninja)",
+            "description": "Default release build using Ninja",
+            "generator":   "Ninja",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "debugBusNinja",
+            "inherits":    ["busConfigFlags", "debugConfigFlags"],
+            "displayName": "Debug+Bus (Ninja)",
+            "description": "Default debug build w/ bus features using Ninja",
+            "generator":   "Ninja",
+            "cacheVariables": { }
+        },
+        {
+            "name":        "releaseBusNinja",
+            "inherits":    ["busConfigFlags", "releaseConfigFlags"],
+            "displayName": "Release+Bus (Ninja)",
+            "description": "Default release build w/ bus features using Ninja",
+            "generator":   "Ninja",
+            "cacheVariables": { }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name":        "commonBuildFlags",
+            "hidden":      true,
+            "description": "Common flags for builds",
+            "verbose":     true,
+            "jobs":        4
+        },
+        { "name": "debugMakefile",             "inherits": "commonBuildFlags", "displayName": "Debug (Unix Makefile)",               "configurePreset": "debugMakefile" },
+        { "name": "releaseMakefile",           "inherits": "commonBuildFlags", "displayName": "Release (Unix Makefile)",             "configurePreset": "releaseMakefile" },
+        { "name": "debugBusMakefile",          "inherits": "commonBuildFlags", "displayName": "Debug+Bus (Unix Makefile)",           "configurePreset": "debugBusMakefile" },
+        { "name": "releaseBusMakefile",        "inherits": "commonBuildFlags", "displayName": "Release+Bus (Unix Makefile)",         "configurePreset": "releaseBusMakefile" },
+
+        { "name": "debugMakefilePackage",      "inherits": "commonBuildFlags", "displayName": "Debug Package (Unix Makefile)",       "configurePreset": "debugMakefile",      "targets": [ "package" ] },
+        { "name": "releaseMakefilePackage",    "inherits": "commonBuildFlags", "displayName": "Release Package (Unix Makefile)",     "configurePreset": "releaseMakefile",    "targets": [ "package" ] },
+        { "name": "debugBusMakefilePackage",   "inherits": "commonBuildFlags", "displayName": "Debug+Bus Package (Unix Makefile)",   "configurePreset": "debugBusMakefile",   "targets": [ "package" ] },
+        { "name": "releaseBusMakefilePackage", "inherits": "commonBuildFlags", "displayName": "Release+Bus Package (Unix Makefile)", "configurePreset": "releaseBusMakefile", "targets": [ "package" ] },
+
+        { "name": "debugNinja",                "inherits": "commonBuildFlags", "displayName": "Debug (Ninja)",                       "configurePreset": "debugNinja" },
+        { "name": "releaseNinja",              "inherits": "commonBuildFlags", "displayName": "Release (Ninja)",                     "configurePreset": "releaseNinja" },
+        { "name": "debugBusNinja",             "inherits": "commonBuildFlags", "displayName": "Debug+Bus (Ninja)",                   "configurePreset": "debugBusNinja" },
+        { "name": "releaseBusNinja",           "inherits": "commonBuildFlags", "displayName": "Release+Bus (Ninja)",                 "configurePreset": "releaseBusNinja" },
+
+        { "name": "debugNinjaPackage",         "inherits": "commonBuildFlags", "displayName": "Debug Package (Ninja)",               "configurePreset": "debugNinja",      "targets": [ "package" ] },
+        { "name": "releaseNinjaPackage",       "inherits": "commonBuildFlags", "displayName": "Release Package (Ninja)",             "configurePreset": "releaseNinja",    "targets": [ "package" ] },
+        { "name": "debugBusNinjaPackage",      "inherits": "commonBuildFlags", "displayName": "Debug+Bus Package (Ninja)",           "configurePreset": "debugBusNinja",   "targets": [ "package" ] },
+        { "name": "releaseBusNinjaPackage",    "inherits": "commonBuildFlags", "displayName": "Release+Bus Package (Ninja)",         "configurePreset": "releaseBusNinja", "targets": [ "package" ] }
+    ]
+}

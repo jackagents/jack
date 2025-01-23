@@ -1,0 +1,147 @@
+// Flatbuffers IDL representation of the JACK event protocol
+namespace aos.jack.websocket.events;
+
+enum NodeType : byte {
+    GENERIC,
+    NODE,
+    SERVICE,
+    AGENT,
+    TEAM,
+}
+
+table BusAddress {
+    type: NodeType;
+    id:   string;
+    name: string;
+}
+
+union EventBody {
+    // JACK
+    Control,
+    Percept,
+    Pursue,
+    Delegation,
+    Drop,
+    // Protocol
+    Heartbeat,
+    Register,
+    Deregister,
+    AgentJoinTeam,
+    AgentLeaveTeam,
+    ActionBegin,
+    ActionUpdate,
+}
+
+table Event {
+    senderNode: BusAddress;
+    sender:     BusAddress;
+    recipient:  BusAddress;
+    timestamp:  int64;
+    eventId:    string;
+    body:       EventBody;
+}
+
+// JACK
+enum ControlCommand : byte {
+    START,
+    PAUSE,
+    STOP,
+}
+
+table Control {
+    command: ControlCommand;
+}
+
+enum AnyType : byte
+{
+    I8,  I16, I32,    I64,
+    U8,  U16, U32,    U64,
+    F32, F64, STRING, BOOL,
+    OTHER
+}
+
+table Any {
+    name:      string;
+    type:      AnyType;
+    otherType: string;
+    data:      [ubyte];
+}
+
+table Percept {
+    beliefSet: string;
+    value:     Any;
+}
+
+table Pursue {
+    goal:       string;
+    persistent: bool;
+    parameters: [Any];
+}
+
+table Drop {
+    goal:   string;
+    goalId: string;
+}
+
+enum DelegationStatus : byte {
+    PENDING,
+    FAILED,
+    SUCCESS,
+}
+
+table Delegation {
+    status:     DelegationStatus;
+    goal:       string;
+    goalId:     string;
+    parameters: [Any];
+    analyse:    bool;
+    score:      float;
+}
+
+// Protocol
+table Heartbeat {
+    timestamp: int64;
+}
+
+table Register {
+    proxy:        bool;
+    address:      BusAddress;
+    templateType: string;
+    start:        bool;
+    team:         BusAddress;
+}
+
+table Deregister {
+    id:       string;
+    nodeType: NodeType;
+}
+
+table AgentJoinTeam {
+    team:  BusAddress;
+    agent: BusAddress;
+}
+
+table AgentLeaveTeam {
+    team:  BusAddress;
+    agent: BusAddress;
+}
+
+table ActionBegin {
+    name:          string;
+    taskId:        string;
+    parameters:    [Any];
+    resourceLocks: [string];
+}
+
+enum ActionStatus : byte {
+    FAILED,
+    SUCCESS
+}
+
+table ActionUpdate {
+    name:   string;
+    status: ActionStatus;
+    taskId: string;
+}
+
+root_type Event;
