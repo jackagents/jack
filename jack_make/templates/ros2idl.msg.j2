@@ -1,0 +1,8 @@
+# {{ message.id.bumpy_case }}
+{%- for field in message.fields %}
+{%- if field.is_enum() %}
+int8 {{ field.enum_type() }}_{{ field.bumpy_case }}=#
+{%- else %}
+{{ field.get_type().to_cpp_type(workspace, EmitNamespace::ROS).unwrap() }} {{ field.bumpy_case }}j
+{%- endif %}
+{%- endfor %}

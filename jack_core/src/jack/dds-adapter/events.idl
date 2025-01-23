@@ -1,0 +1,368 @@
+// IDL file for JACK engine event model
+
+module aos { module jack { module ddsevents {
+
+typedef string<32> UniqueId; /// \todo: This needs to be 2xU64 not hex
+typedef long long Timestamp;
+typedef string<64> Label;
+
+enum NodeType
+{
+    NodeType_GENERIC,
+    NodeType_NODE,
+    NodeType_SERVICE,
+    NodeType_AGENT,
+    NodeType_TEAM
+};
+
+struct BusAddress
+{
+    NodeType type;
+    UniqueId id;
+    Label    name;
+};
+
+enum EventType
+{
+    /// JACK
+    EventType_TIMER,
+    EventType_CONTROL,
+    EventType_ACTION,
+    EventType_ACTIONCOMPLETE,
+    EventType_MESSAGE,
+    EventType_PERCEPT,
+    EventType_PURSUE,
+    EventType_DROP,
+    EventType_SCHEDULE,
+    EventType_DELEGATION,
+    EventType_AUCTION,
+    EventType_SHAREBELIEFSET,
+    EventType_TACTIC,
+    /// Protocol
+    EventType_HEARTBEAT,
+    EventType_REGISTER,
+    EventType_DEREGISTER,
+    EventType_AGENT_JOIN_TEAM,
+    EventType_AGENT_LEAVE_TEAM,
+    EventType_ACTION_BEGIN,
+    EventType_ACTION_UPDATE,
+    EventType_BDI_LOG
+};
+
+
+// JACK
+enum ControlCommand
+{
+    ControlCommand_START,
+    ControlCommand_PAUSE,
+    ControlCommand_STOP
+};
+
+struct Control
+{
+    ControlCommand command;
+};
+
+typedef sequence<float, 2> V2;
+
+// \todo: We dump JSON onto the bus because this is a recursive structure
+// which DDS struggles with when interopting with other tools like the admin
+// console or the JS connector.
+//
+// enum AnyType
+// {
+//     AnyType_I8,
+//     AnyType_I16,
+//     AnyType_I32,
+//     AnyType_I64,
+//     AnyType_U8,
+//     AnyType_U16,
+//     AnyType_U32,
+//     AnyType_U64,
+//     AnyType_F32,
+//     AnyType_F64,
+//     AnyType_Bool,
+//     AnyType_V2,
+//     AnyType_String,
+//     AnyType_Message
+// };
+//
+// struct Message;
+// union AnyData switch(AnyType)
+// {
+//     case AnyType_I8:      sequence<char>               i8Val;
+//     case AnyType_I16:     sequence<short>              i16Val;
+//     case AnyType_I32:     sequence<long>               i32Val;
+//     case AnyType_I64:     sequence<long long>          i64Val;
+//     case AnyType_U8:      sequence<octet>              u8Val;
+//     case AnyType_U16:     sequence<unsigned short>     u16Val;
+//     case AnyType_U32:     sequence<unsigned long>      u32Val;
+//     case AnyType_U64:     sequence<unsigned long long> u64Val;
+//     case AnyType_F32:     sequence<float>              f32Val;
+//     case AnyType_F64:     sequence<double>             f64Val;
+//     case AnyType_Bool:    sequence<char>               b8Val;
+//     case AnyType_V2:      sequence<V2>                 v2Val;
+//     case AnyType_String:  sequence<string>             stringVal;
+//     case AnyType_Message: sequence<Message>            messageVal;
+// };
+//
+// struct Any
+// {
+//     AnyType type; // This is not necessary but is useful when talking to our JS clients for discovery
+//     AnyData data;
+// };
+//
+// struct Field
+// {
+//     Label name;
+//     Any   value;
+// };
+//
+// struct Message
+// {
+//     Label      schema;
+//     FieldArray fields;
+// };
+//
+// typedef sequence<Field, 32> FieldArray;
+
+typedef string Field;
+typedef string Message;
+
+struct Percept
+{
+    Label beliefSet;
+    Field field;
+};
+
+struct Pursue
+{
+    Label   goal;
+    boolean persistent;
+    Message parameters;
+};
+
+enum DropMode
+{
+    DropMode_NORMAL,
+    DropMode_FORCE
+};
+
+struct Drop
+{
+    Label    goal;
+    UniqueId goalId;
+    DropMode mode;
+};
+
+enum DelegationStatus
+{
+    DelegationStatus_PENDING,
+    DelegationStatus_FAILED,
+    DelegationStatus_SUCCESS
+};
+
+struct Delegation
+{
+    DelegationStatus status;
+    Label            goal;
+    UniqueId         goalId;
+    Message          parameters;
+    boolean          analyse;
+    float            score;
+    Label            team;
+    UniqueId         teamId;
+};
+
+// Protocol
+struct Heartbeat
+{
+    Timestamp time;
+};
+
+// Discovery Events
+struct Register
+{
+    boolean    proxy;
+    BusAddress address;
+    Label      templateType;
+    boolean    start;
+    BusAddress team;
+};
+
+struct Deregister
+{
+    UniqueId id;
+    NodeType nodeType;
+};
+
+struct TeamAgent
+{
+    BusAddress team;
+    BusAddress agent;
+};
+
+typedef TeamAgent AgentJoinTeam;
+typedef TeamAgent AgentLeaveTeam;
+
+struct ActionBegin
+{
+    Label           name;
+    UniqueId        taskId;
+    Label           goal;
+    UniqueId        goalId;
+    UniqueId        intentionId;
+    Label           plan;
+    Message         parameters;
+    sequence<Label> resourceLocks;
+};
+
+enum ActionStatus
+{
+    ActionStatus_FAILED,
+    ActionStatus_SUCCESS
+};
+
+struct ActionUpdate
+{
+    Label        name;
+    UniqueId     taskId;
+    Label        goal;
+    UniqueId     goalId;
+    UniqueId     intentionId;
+    Label        plan;
+    ActionStatus status;
+    Message      reply;
+};
+
+enum BDILogLevel
+{
+    BDILogLevel_NORMAL,
+    BDILogLevel_IMPORTANT,
+    BDILogLevel_CRITICAL
+};
+
+enum BDILogType
+{
+    BDILogType_GOAL_STARTED,
+    BDILogType_GOAL_FINISHED,
+    BDILogType_SUB_GOAL_STARTED,
+    BDILogType_SUB_GOAL_FINISHED,
+    BDILogType_INTENTION_STARTED,
+    BDILogType_INTENTION_FINISHED,
+    BDILogType_ACTION_STARTED,
+    BDILogType_ACTION_FINISHED,
+    BDILogType_SLEEP_STARTED,
+    BDILogType_SLEEP_FINISHED,
+    BDILogType_CONDITION
+};
+
+enum BDILogGoalIntentionResult
+{
+    BDILogGoalIntentionResult_FAILED,
+    BDILogGoalIntentionResult_SUCCESS,
+    BDILogGoalIntentionResult_DROPPED
+};
+
+struct BDILogGoal
+{
+    Label                     goal;
+    UniqueId                  goalId;
+    UniqueId                  intentionId; ///< Set when type is SUB_GOAL, ignored otherwise
+    UniqueId                  taskId;      ///< Set when type is SUB_GOAL, ignored otherwise
+    string                    dropReason;  ///< Optionally set when result is DROPPED
+    BDILogGoalIntentionResult result;      ///< Set when type is set to FINISHED variant, ignore otherwise
+};
+
+struct BDILogIntention
+{
+    Label                     goal;
+    UniqueId                  goalId;
+    UniqueId                  intentionId;
+    Label                     plan;
+    BDILogGoalIntentionResult result; ///< Set when type is set to FINISHED variant, ignore otherwise
+};
+
+struct BDILogAction
+{
+    Label    goal;
+    UniqueId goalId;
+    UniqueId intentionId;
+    Label    plan;
+    UniqueId taskId;
+    Label    action;
+    string   reasoning;
+    boolean  success; ///< Set when type is set to FINISHED variant, ignore otherwise
+};
+
+struct BDILogSleep
+{
+    Label     goal;
+    UniqueId  goalId;
+    UniqueId  intentionId;
+    Label     plan;
+    UniqueId  taskId;
+    Timestamp sleepMs; ///< Set when type is set to STARTED variant, ignore otherwise
+};
+
+struct BDILogCondition
+{
+    Label    goal;
+    UniqueId goalId;
+    UniqueId intentionId;
+    Label    plan;
+    UniqueId taskId;
+    string   condition;
+    boolean  success;
+};
+
+union BDILogPayload switch(BDILogType)
+{
+    case BDILogType_GOAL_STARTED:       BDILogGoal      goalStarted;
+    case BDILogType_GOAL_FINISHED:      BDILogGoal      goalFinished;
+    case BDILogType_SUB_GOAL_STARTED:   BDILogGoal      subGoalStarted;
+    case BDILogType_SUB_GOAL_FINISHED:  BDILogGoal      subGoalFinished;
+    case BDILogType_INTENTION_STARTED:  BDILogIntention intentionStarted;
+    case BDILogType_INTENTION_FINISHED: BDILogIntention intentionFinished;
+    case BDILogType_ACTION_STARTED:     BDILogAction    actionStarted;
+    case BDILogType_ACTION_FINISHED:    BDILogAction    actionFinished;
+    case BDILogType_SLEEP_STARTED:      BDILogSleep     sleepStarted;
+    case BDILogType_SLEEP_FINISHED:     BDILogSleep     sleepFinished;
+    case BDILogType_CONDITION:          BDILogCondition condition;
+};
+
+struct BDILog
+{
+    BDILogLevel   level;
+    BDILogPayload payload;
+    BDILogType    logType;
+};
+
+union EventBody switch (EventType)
+{
+    case EventType_CONTROL:          Control        control;
+    case EventType_PERCEPT:          Percept        percept;
+    case EventType_MESSAGE:          Message        message;
+    case EventType_PURSUE:           Pursue         pursue;
+    case EventType_DROP:             Drop           drop;
+    case EventType_DELEGATION:       Delegation     delegation;
+    case EventType_HEARTBEAT:        Heartbeat      heartbeat;
+    case EventType_REGISTER:         Register       reg;
+    case EventType_DEREGISTER:       Deregister     dereg;
+    case EventType_AGENT_JOIN_TEAM:  AgentJoinTeam  agentJoinTeam;
+    case EventType_AGENT_LEAVE_TEAM: AgentLeaveTeam agentLeaveTeam;
+    case EventType_ACTION_BEGIN:     ActionBegin    actionBegin;
+    case EventType_ACTION_UPDATE:    ActionUpdate   actionUpdate;
+    case EventType_BDI_LOG:          BDILog         bdiLog;
+};
+
+struct Event
+{
+    BusAddress senderNode;
+    BusAddress sender;
+    BusAddress recipient;
+    Timestamp  timestampUs;
+    UniqueId   eventId;
+    EventBody  body;
+};
+}; }; }; // modules aos.jack.ddsevents

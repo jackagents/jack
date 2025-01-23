@@ -1,0 +1,393 @@
+/// Project
+#include <{{ project.bumpy_case|lower }}/meta/messages/{{ beliefset.id.bumpy_case|lower }}meta.h>
+
+/// JACK
+#include <jack/corelib.h>
+#include <jack/messageschema.h>
+#include <jack/utils.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ beliefset.id.bumpy_case }}::{{ beliefset.id.bumpy_case }}()
+{
+    // set the default values for this message
+    {%- for field in beliefset.fields %}
+    {%- if field.is_enum() %}
+    {{ field.bumpy_case }} = static_cast<{{ field.enum_type() }}>({{ field.to_cpp_default(workspace).unwrap() }});
+    {%- else %}
+    {{ field.bumpy_case }} = {{ field.to_cpp_default(workspace).unwrap() }};
+    {%- endif %}
+    {%- endfor %}
+
+    m_schemaName = "{{ beliefset.id.qualified_name() }}";
+}
+{%- if beliefset.fields.len() > 0 %}
+
+{{ beliefset.id.bumpy_case }}::{{ beliefset.id.bumpy_case }}(
+    {%- for field in beliefset.fields %}
+    {%- if field.is_enum() %}
+    const {{ field.enum_type() }}& {{ field.bumpy_case }}
+    {%- else %}
+    const {{ field.to_cpp_type(workspace).unwrap() }}& {{ field.bumpy_case }}
+    {%- endif %}
+    {%- if !loop.last %},{% endif %}
+    {%- endfor %})
+{
+{%- for field in beliefset.fields %}
+    this->{{ field.bumpy_case }} = {{ field.bumpy_case }};
+{%- endfor %}
+
+    m_schemaName = "{{ beliefset.id.qualified_name() }}";
+
+}
+{% endif %}
+
+std::unique_ptr<{{ beliefset.id.bumpy_case }}> {{ beliefset.id.bumpy_case }}::createFromPointer(const aos::jack::Message* msg)
+{
+    if (!msg) {
+        return {};
+    }
+
+    const {{ beliefset.id.bumpy_case }}* ptr = dynamic_cast<const {{ beliefset.id.bumpy_case }}*>(msg);
+
+    if (!ptr) {
+        JACK_WARNING("Failed to create {{ beliefset.id.bumpy_case }} from {} message", msg->schema());
+        return {};
+    }
+
+    auto result = std::make_unique<{{ beliefset.id.bumpy_case }}>();
+    *result = *ptr;
+
+    return result;
+}
+
+bool {{ beliefset.id.bumpy_case }}::operator==(const Message& rhs) const
+{
+    if (typeid(*this) != typeid(rhs)) {
+            return false;
+    }
+
+    const {{ beliefset.id.bumpy_case }}& other = static_cast<const {{ beliefset.id.bumpy_case }}&>(rhs);
+
+    {%- if beliefset.fields.len() > 0 %}
+    return {%- for field in beliefset.fields %}
+           {{ field.bumpy_case }} == other.{{ field.bumpy_case }}{%- if !loop.last %} &&{% endif %}
+           {%- endfor %};
+    {%- else %}
+    return true;
+    {%- endif %}
+}
+
+bool {{ beliefset.id.bumpy_case }}::operator!=(const Message& rhs) const
+{
+    return !(*this == rhs);
+}
+
+void {{ beliefset.id.bumpy_case }}::swap(Message& other)
+{
+    if ({{ beliefset.id.bumpy_case }}* derived = dynamic_cast<{{ beliefset.id.bumpy_case }}*>(&other)) {
+        {%- for field in beliefset.fields %}
+        std::swap({{ field.bumpy_case }}, derived->{{ field.bumpy_case }});
+        {%- endfor %}
+    } else {
+        /// ignore mismatch
+    }
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+std::string {{ beliefset.id.bumpy_case }}::toString() const
+{
+    aos::jack::ThreadScratchAllocator scratch = aos::jack::getThreadScratchAllocator(nullptr);
+    auto builder                              = aos::jack::StringBuilder(scratch.arena);
+    builder.append(FMT_STRING("{{ beliefset.id.qualified_name() }}{{ "{{" }}"
+                   {%- for field in beliefset.fields %}
+                   "{{ field.name }}={}{% if loop.last %}{{ "}}" }}"{% else %}, "{%- endif %}
+                   {%- endfor %})
+                   {%- for field in beliefset.fields %}
+                   {%- if field.is_array() %}
+                   , aos::jack::toStringArrayArena<{{ field.to_schema_cpp_type(workspace).unwrap() }}>(scratch.arena, {{ field.bumpy_case }})
+                   {%- else %}
+                   , {{ field.bumpy_case }}
+                   {%- endif %}
+                   {%- endfor %});
+
+    std::string result = builder.toString();
+    return result;
+}
+
+/******************************************************************************
+ * Static Functions
+ ******************************************************************************/
+const aos::jack::MessageSchemaHeader {{ beliefset.id.bumpy_case }}::SCHEMA =
+{
+    /*name*/   "{{ beliefset.id.qualified_name() }}",
+    /*fields*/ {
+        {%- for field in beliefset.fields %}
+        aos::jack::MessageSchemaField{
+            /*name*/         "{{ field.name }}",
+            /*type*/         aos::jack::protocol::AnyType_{{ field.to_schema_prop_type().unwrap() }},
+            /*array*/        {% if field.is_array() %}true{% else %}false{% endif %},
+            /*defaultValue*/ std::any({{ field.to_cpp_default(workspace).unwrap() }}),
+
+            {%- if field.is_custom() %}
+            /*msgHeader*/    &{{ field.to_schema_cpp_type(workspace).unwrap() }}::SCHEMA,
+            {%- else %}
+            /*msgHeader*/    nullptr,
+            {%- endif %}
+        },
+        {%- endfor %}
+    }
+};
+
+const aos::jack::MessageSchemaField& {{ beliefset.id.bumpy_case }}::schemaField({{ beliefset.id.bumpy_case }}::SchemaField field)
+{
+    const aos::jack::MessageSchemaField* result = nullptr;
+    if (JACK_CHECK(field >= 0 && field < {{ beliefset.id.bumpy_case }}::SchemaField_COUNT)) {
+        result = &{{ beliefset.id.bumpy_case }}::SCHEMA.fields[field];
+    } else {
+        static const aos::jack::MessageSchemaField NIL = {};
+        result = &NIL;
+    }
+    return *result;
+}
+
+const aos::jack::Message* {{ beliefset.id.bumpy_case }}::anyToMessage(const std::any& any)
+{
+    const aos::jack::Message* result = nullptr;
+    try {
+        const {{ beliefset.id.bumpy_case }}* concreteType = std::any_cast<{{ beliefset.id.bumpy_case }}>(&any);
+        if (concreteType) {
+            result = concreteType;
+        }
+    } catch (const std::bad_any_cast&) {
+        /// \note Type did not match, we will return nullptr
+    }
+    return result;
+}
+
+std::vector<const aos::jack::Message*> {{ beliefset.id.bumpy_case }}::anyArrayToMessage(const std::any& any)
+{
+    std::vector<const aos::jack::Message*> result;
+    try {
+        const auto* concreteTypeArray = std::any_cast<std::vector<{{ beliefset.id.bumpy_case }}>>(&any);
+        result.reserve(concreteTypeArray->size());
+        for (const auto& concreteType : *concreteTypeArray) {
+            result.push_back(&concreteType);
+        }
+    } catch (const std::bad_any_cast&) {
+        /// \note Type did not match, we will return nullptr
+    }
+    return result;
+}
+
+std::string {{ beliefset.id.bumpy_case }}::anyToJSON(const std::any& any)
+{
+    std::string result;
+    try {
+        const auto* concreteType = std::any_cast<{{ beliefset.id.bumpy_case }}>(&any);
+        if (concreteType) {
+            result = nlohmann::json(*concreteType).dump();
+        }
+    } catch (const std::bad_any_cast&) {
+        /// \note Type did not match, we will return nullptr
+    }
+    return result;
+}
+
+std::string {{ beliefset.id.bumpy_case }}::anyArrayToJSON(const std::any& any)
+{
+    std::string result;
+    try {
+        const auto* concreteTypeArray = std::any_cast<std::vector<{{ beliefset.id.bumpy_case }}>>(&any);
+        result.reserve(concreteTypeArray->size());
+
+        nlohmann::json array = nlohmann::json::array();
+        for (const auto& concreteType : *concreteTypeArray) {
+            array.push_back(concreteType);
+        }
+        result = array.dump();
+    } catch (const std::bad_any_cast&) {
+        /// \note Type did not match, we will return nullptr
+    }
+    return result;
+}
+
+nlohmann::json {{ beliefset.id.bumpy_case }}::anyToNlohmannJSON(const std::any& any)
+{
+    nlohmann::json result;
+    if (any.type() == typeid(std::vector<{{ beliefset.id.bumpy_case }}>)) {
+        const auto* concreteTypeArray = std::any_cast<std::vector<{{ beliefset.id.bumpy_case }}>>(&any);
+        result = *concreteTypeArray;
+    } else if (any.type() == typeid({{ beliefset.id.bumpy_case }})) {
+        const auto* concreteType = std::any_cast<{{ beliefset.id.bumpy_case }}>(&any);
+        result = *concreteType;
+    }
+
+    return result;
+}
+
+/// Serialise this message into json
+void {{ beliefset.id.bumpy_case }}::serialise(nlohmann::json& json) const
+{
+    json = *this;
+}
+
+std::unique_ptr<aos::jack::Message> {{ beliefset.id.bumpy_case }}::clone() const
+{
+    std::unique_ptr<{{ beliefset.id.bumpy_case }}> msg = std::make_unique<{{ beliefset.id.bumpy_case }}>();
+
+    {%- for field in beliefset.fields %}
+    msg->{{ field.bumpy_case }} = {{ field.bumpy_case }};
+    {%- endfor %}
+
+    auto basePtr = std::unique_ptr<aos::jack::Message>(std::move(msg));
+
+    return basePtr;
+}
+
+std::any {{ beliefset.id.bumpy_case }}::getField(const std::string& fieldName) const
+{
+    static const std::unordered_map<std::string, std::function<std::any(const {{ beliefset.id.bumpy_case }}&)>> factories = {
+        {%- for field in beliefset.fields %}
+            {"{{ field.bumpy_case }}", [](const {{ beliefset.id.bumpy_case }}& msg) { return std::make_any<{{ field.to_cpp_type(workspace).unwrap() }}>(msg.{{ field.bumpy_case }}); }},
+        {%- endfor %}
+        };
+
+    auto it = factories.find(fieldName);
+    if (it != factories.end()) {
+        return it->second(*this);
+    }
+
+    return {};
+}
+
+std::any {{ beliefset.id.bumpy_case }}::getFieldPtr(const std::string& fieldName) const
+{
+    static const std::unordered_map<std::string, std::function<std::any(const {{ beliefset.id.bumpy_case }}&)>> factories = {
+        {%- for field in beliefset.fields %}
+            {"{{ field.bumpy_case }}", [](const {{ beliefset.id.bumpy_case }}& msg) { std::any ptr = &msg.{{ field.bumpy_case }}; return ptr; }},
+        {%- endfor %}
+        };
+
+    auto it = factories.find(fieldName);
+    if (it != factories.end()) {
+        return it->second(*this);
+    }
+
+    return {};
+}
+
+bool {{ beliefset.id.bumpy_case }}::setField(const std::string& fieldName, const std::any& value)
+{
+    static const std::unordered_map<std::string, std::function<void({{ beliefset.id.bumpy_case }}&, std::any value)>> factories = {
+        {%- for field in beliefset.fields %}
+
+        {%- if field.is_enum() %}
+            {"{{ field.bumpy_case }}", []({{ beliefset.id.bumpy_case }}& msg, const std::any& v) { int val = std::any_cast<int>(v); msg.{{ field.bumpy_case }} = static_cast<{{ field.enum_type() }}>(val); }},
+        {%- else %}
+            {"{{ field.bumpy_case }}", []({{ beliefset.id.bumpy_case }}& msg, const std::any& v) { msg.{{ field.bumpy_case }} = std::any_cast<{{ field.to_cpp_type(workspace).unwrap() }}>(v); }},
+        {%- endif %}
+        {%- endfor %}
+        };
+
+    auto it = factories.find(fieldName);
+    if (it != factories.end()) {
+
+        try {
+            it->second(*this, value);
+            return true;
+        } catch (const std::bad_any_cast& e) {
+            return false;
+        }
+    }
+    return false;
+}
+
+/// @todo: Deprecate, this method of storing schemas is not great because
+/// it requires multiple lookups to resolve nested messages. Our new approach
+/// is able to inline the entire data structure without requiring any lookups
+/// from the engine.
+const aos::jack::MessageSchema& {{ beliefset.id.bumpy_case }}::schema()
+{
+    static aos::jack::MessageSchema result = {};
+    for (static bool once = true; once; once = false) {
+        result.m_name = "{{ beliefset.id.qualified_name() }}";
+        {%- for field in beliefset.fields %}
+        result.addFieldValue<{{ field.to_cpp_type(workspace).unwrap() }}>("{{ field.name }}" /*name*/, "{{ field.to_prop_type().unwrap() }}" /*type*/, {{ field.to_cpp_default(workspace).unwrap() }} /*value*/);
+        {%- endfor %}
+        result.setFactory([](){ return std::make_unique<{{ beliefset.id.bumpy_case }}>(); });
+    }
+    return result;
+}
+
+/******************************************************************************
+ * JSON
+ ******************************************************************************/
+#if defined(JACK_WITH_SIM)
+{{ beliefset.id.bumpy_case }}::JsonConfig::JsonConfig()
+: aos::sim::JsonParsedComponent({{ beliefset.id.bumpy_case }}::MODEL_NAME)
+{
+}
+
+std::unique_ptr<aos::jack::Message> {{ beliefset.id.bumpy_case }}::JsonConfig::asMessage() const
+{
+    auto msg = std::make_unique<{{ beliefset.id.bumpy_case }}>();
+
+    {%- for field in beliefset.fields %}
+    {%- if field.is_array() %}
+    for (auto it : {{ field.bumpy_case }} ) {
+        {%- if field.is_custom() %}
+        msg->{{ field.bumpy_case }}.push_back(*dynamic_cast<{{ field.to_cpp_inner_type(workspace).unwrap() }}*>(it.asMessage().release()));
+        {%- else %}
+        msg->{{ field.bumpy_case }}.push_back(it);
+        {%- endif %}
+    }
+    {%- elseif field.is_custom() %}
+
+    msg->{{ field.bumpy_case }} = *dynamic_cast<{{ field.to_cpp_type(workspace).unwrap() }}*>({{ field.bumpy_case }}.asMessage().release());
+    //msg->{{ field.bumpy_case }} = {{ field.bumpy_case }}.asMessage();
+    {%- else %}
+    msg->{{ field.bumpy_case }} = {{ field.bumpy_case }};
+    {%- endif %}
+    {%- endfor %}
+
+    return msg;
+}
+
+aos::sim::JsonParsedComponent *{{ beliefset.id.bumpy_case }}::JsonConfig::parseJson(const nlohmann::json &params)
+{
+    return new {{ beliefset.id.bumpy_case }}::JsonConfig(params.get<JsonConfig>());
+}
+#endif /// JACK_WITH_SIM
+
+void to_json(nlohmann::json& dest, const {{ beliefset.id.bumpy_case }}& src)
+{
+    {%- for field in beliefset.fields %}
+    dest["{{ field.name }}"] = src.{{ field.bumpy_case }};
+    {%- endfor %}
+}
+
+void from_json(const nlohmann::json& src, {{ beliefset.id.bumpy_case }}& dest)
+{
+    {{ beliefset.id.bumpy_case }} defaultValue = {};
+    {%- for field in beliefset.fields %}
+    dest.{{ field.bumpy_case }} = src.value("{{ field.name }}", defaultValue.{{ field.bumpy_case }});
+    {%- endfor %}
+}
+
+std::string format_as(const {{ project.cpp_namespace_string() }}::{{ beliefset.id.bumpy_case }}& val)
+{
+    std::string result = val.toString();
+    return result;
+}
+
+std::string format_as(aos::jack::Span<{{ project.cpp_namespace_string() }}::{{ beliefset.id.bumpy_case }}> val)
+{
+    std::string result = aos::jack::toStringArray(val);
+    return result;
+}
+{{ project.emit_cpp_namespace_end() }}

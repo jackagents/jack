@@ -1,0 +1,17 @@
+.agentGoalGroupTable {
+  width: 100%;
+  height: 100%;
+  transition: grid-template-rows 0.5s ease;
+}
+
+.agentGoalGroupTable .rdg-row.row-selected {
+  background-color: grey;
+}
+
+.agentGoalGroupTable .rdg-cell {
+  text-align: center;
+
+  &[aria-selected='true'] {
+    outline: none;
+  }
+}

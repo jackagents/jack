@@ -1,0 +1,47 @@
+{{ project.emit_cpp_header_guard_begin(plan.id.name.as_str(), "_IMPL") }}
+
+#include <{{ project.bumpy_case|lower}}/meta/plans/{{ plan.id.bumpy_case|lower }}meta.h>
+
+namespace aos::jack
+{
+class BeliefContext;
+}
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * \class  {{ plan.id.bumpy_case }}
+ * \author jackmake
+ ******************************************************************************/
+class {{ plan.id.bumpy_case }} : public {{ plan.id.bumpy_case }}Meta
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ plan.id.bumpy_case }}() = default;
+    {{ plan.id.bumpy_case }}(std::string_view name);
+    {{ plan.id.bumpy_case }}(const {{ plan.id.bumpy_case }}* other);
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    {%- if plan.precondition.custom %}
+    bool pre(const aos::jack::BeliefContext& context) override;
+    {%- endif %}
+
+    {%- if plan.dropcondition.custom %}
+    bool dropWhen(const aos::jack::BeliefContext& context) override;
+    {%- endif %}
+
+    {%- if plan.effects %}
+    void effects(aos::jack::BeliefContext& context) override;
+    {%- endif %}
+
+    {%- for task in plan.tasks %}
+    {%- if task.get_type() == TaskType::condition %}
+    static bool cond{{ task.get_condition_text().as_str() }}(const aos::jack::BeliefContext& context);
+    {%- endif %}
+    {%- endfor %}
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(plan.id.name.as_str(), "_IMPL") }}

@@ -1,0 +1,73 @@
+{{ project.emit_cpp_header_guard_begin(goal.id.name.as_str(), "_META") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// JACK
+#include <jack/goal.h>
+
+/// Third Party
+#include <string_view>
+
+namespace aos::jack
+{
+class BeliefContext;
+}
+
+{{ goal.emit_cpp_forward_decls(workspace) }}
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * \class  {{ goal.id.bumpy_case }}Meta
+ * \author jackmake
+ * \source {{ project.bumpy_case }}.jack
+ ******************************************************************************/
+class {{ goal.id.bumpy_case }}Meta : public aos::jack::Goal
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ goal.id.bumpy_case }}Meta();
+    {{ goal.id.bumpy_case }}Meta(std::string_view name);
+    {{ goal.id.bumpy_case }}Meta(const {{ goal.id.bumpy_case }}Meta *other);
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    aos::jack::Goal* clone(JACK_CALL_SITE_ARGS_NO_TAIL_COMMA) const override;
+
+    {%- if goal.precondition.custom || goal.dropcondition.custom || goal.satisfied.custom || goal.heuristic %}
+    {%- if goal.precondition.custom %}
+    virtual bool pre(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) = 0;
+    {%- endif %}
+    {%- if goal.dropcondition.custom %}
+    virtual bool dropWhen(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) = 0;
+    {%- endif %}
+    {%- if goal.satisfied.custom %}
+    virtual bool satisfied(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) = 0;
+    {%- endif %}
+    {%- if goal.heuristic %}
+    virtual float heuristic(const aos::jack::BeliefContext& context{% for msg in goal.query_messages %}, const {{ workspace.get_message(msg).unwrap().to_cpp_type(workspace) }}& {{ msg.bumpy_case|lower }}{% endfor %}) = 0;
+    {%- endif %}
+    {%- endif %}
+
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    {%- if goal.query_messages.len() > 0 %}
+    /// Verify that the BeliefContext contains the pre-requisite messages
+    /// requested by the goal for execution.
+    static bool beliefContextValid(const aos::jack::BeliefContext& context, std::string_view prefix);
+    {%- endif %}
+
+    /**************************************************************************
+     * Static Fields
+     **************************************************************************/
+    /// The name of the class
+    static constexpr inline std::string_view CLASS_NAME = "{{ goal.id.bumpy_case }}";
+
+    /// The name of this object in the JACK model
+    static constexpr inline std::string_view MODEL_NAME = "{{ goal.id.qualified_name() }}";
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(goal.id.name.as_str(), "_META") }}

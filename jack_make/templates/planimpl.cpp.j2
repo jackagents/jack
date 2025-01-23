@@ -1,0 +1,55 @@
+#include <{{ project.bumpy_case|lower }}/impl/plans/{{ plan.id.bumpy_case|lower }}impl.h>
+
+/// JACK
+#include <jack/beliefcontext.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ plan.id.bumpy_case }}::{{ plan.id.bumpy_case }}(std::string_view name)
+: {{ plan.id.bumpy_case }}Meta(name)
+{
+}
+
+{{ plan.id.bumpy_case }}::{{ plan.id.bumpy_case }}(const {{ plan.id.bumpy_case }}* other)
+: {{ plan.id.bumpy_case }}Meta(other)
+{
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+{%- if plan.precondition.custom %}
+
+bool {{ plan.id.bumpy_case }}::pre([[ maybe_unused ]] const aos::jack::BeliefContext& context)
+{
+    return true;
+}
+{%- endif %}
+
+{%- if plan.dropcondition.custom %}
+
+bool {{ plan.id.bumpy_case }}::dropWhen([[ maybe_unused ]] const aos::jack::BeliefContext& context)
+{
+    return false;
+}
+{%- endif %}
+
+{%- if plan.effects %}
+
+void {{ plan.id.bumpy_case }}::effects([[ maybe_unused ]] aos::jack::BeliefContext& context)
+{
+}
+{%- endif %}
+
+{%- for task in plan.tasks %}
+{%- if task.get_type() == TaskType::condition %}
+
+bool {{ plan.id.bumpy_case }}::cond{{ task.get_condition_text().as_str() }}([[ maybe_unused ]] const aos::jack::BeliefContext& context)
+{
+    return false;
+}
+{%- endif %}
+{%- endfor %}
+{{ project.emit_cpp_namespace_end() }}

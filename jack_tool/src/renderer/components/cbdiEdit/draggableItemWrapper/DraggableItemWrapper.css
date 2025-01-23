@@ -1,0 +1,62 @@
+.simpleDraggableItem {
+  overflow: hidden;
+  transform-origin: 30% 50% 0px;
+  padding: 20px;
+  margin: 0 10px;
+  max-height: 100%;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.simpleDraggableItem .dragHandle {
+  visibility: hidden;
+  position: absolute;
+  top: 5px;
+  left: 0;
+  cursor: move;
+  width: 20px;
+  height: 16px;
+}
+
+.simpleDraggableItem .dragClose {
+  visibility: hidden;
+  display: block;
+  position: absolute;
+  cursor: pointer;
+  top: 5px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+}
+
+.simpleDraggableItem:hover .dragHandle,
+.simpleDraggableItem.dragged .dragHandle,
+.simpleDraggableItem:hover .dragClose,
+.simpleDraggableItem.dragged .dragClose {
+  visibility: visible;
+}
+
+.simpleDraggableItem .itemText {
+  display: flex;
+  align-items: center;
+  font-style: normal;
+  color: black;
+}
+
+.simpleDraggableItem .itemText > svg {
+  display: none;
+}
+
+.simpleDraggableItem .itemText-missing {
+  display: flex;
+  align-items: center;
+  color: #d40b0b;
+  font-style: italic;
+}
+
+.simpleDraggableItem .itemText-missing::after {
+  content: ' (missing)';
+}

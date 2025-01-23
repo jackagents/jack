@@ -1,0 +1,39 @@
+{{ project.emit_cpp_header_guard_begin(goal.id.name.as_str(), "_IMPL") }}
+
+#include <{{ project.bumpy_case|lower }}/meta/goals/{{ goal.id.bumpy_case|lower }}meta.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * \class  {{ goal.id.bumpy_case }}
+ * \author jackmake
+ ******************************************************************************/
+class {{ goal.id.bumpy_case }} : public {{ goal.id.bumpy_case }}Meta
+{
+public:
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {{ goal.id.bumpy_case }}() = default;
+    {{ goal.id.bumpy_case }}(std::string_view name);
+    {{ goal.id.bumpy_case }}(const {{ goal.id.bumpy_case }}* other);
+
+    {%- if goal.precondition.custom || goal.dropcondition.custom || goal.satisfied.custom || goal.heuristic %}
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    {%- if goal.precondition.custom %}
+    bool pre(const aos::jack::BeliefContext& context{% for bs in goal.query_messages %}, const {{ bs.bumpy_case }}& {{ bs.bumpy_case|lower }}{% endfor %}) override;
+    {%- endif %}
+    {%- if goal.dropcondition.custom %}
+    bool dropWhen(const aos::jack::BeliefContext& context{% for bs in goal.query_messages %}, const {{ bs.bumpy_case }}& {{ bs.bumpy_case|lower }}{% endfor %}) override;
+    {%- endif %}
+    {%- if goal.satisfied.custom %}
+    bool satisfied(const aos::jack::BeliefContext& context{% for bs in goal.query_messages %}, const {{ bs.bumpy_case }}& {{ bs.bumpy_case|lower }}{% endfor %}) override;
+    {%- endif %}
+    {%- if goal.heuristic %}
+    float heuristic(const aos::jack::BeliefContext& context{% for bs in goal.query_messages %}, const {{ bs.bumpy_case }}& {{ bs.bumpy_case|lower }}{% endfor %}) override;
+    {%- endif %}
+    {%- endif %}
+};
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end(goal.id.name.as_str(), "_IMPL") }}

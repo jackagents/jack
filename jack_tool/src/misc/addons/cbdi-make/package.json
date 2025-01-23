@@ -1,0 +1,14 @@
+{
+  "name": "cbdi-make",
+  "version": "0.3.3",
+  "files": [
+    "cbdi_make_bg.wasm",
+    "cbdi_make.js",
+    "cbdi_make.d.ts"
+  ],
+  "module": "cbdi_make.js",
+  "types": "cbdi_make.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

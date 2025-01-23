@@ -1,0 +1,614 @@
+/// Sim - {{ project.bumpy_case }}
+#include <{{ project.bumpy_case|lower }}/meta/{{ project.bumpy_case|lower }}module.h>
+#if defined(JACK_WITH_SIM)
+#include <{{ project.bumpy_case|lower }}/meta/{{ project.bumpy_case|lower }}servicecomponents.h>
+#include <{{ project.bumpy_case|lower }}/meta/{{ project.bumpy_case|lower }}events.h>
+#endif /// defined(JACK_WITH_SIM)
+
+{%- for team in model.teams %}
+#include <{{ project.bumpy_case|lower }}/impl/teams/{{ team.id.bumpy_case|lower }}impl.h>
+{%- endfor %}
+
+{%- for agent in model.agents %}
+#include <{{ project.bumpy_case|lower }}/impl/agents/{{ agent.id.bumpy_case|lower }}impl.h>
+{%- endfor %}
+
+{%- for service in model.services %}
+#include <{{ project.bumpy_case|lower }}/impl/services/{{ service.id.bumpy_case|lower }}impl.h>
+{%- endfor %}
+
+{%- for message in model.messages %}
+#include <{{ project.bumpy_case|lower }}/meta/messages/{{ message.id.bumpy_case|lower }}meta.h>
+{%- endfor %}
+
+{%- for goal in model.goals %}
+#include <{{ project.bumpy_case|lower }}/impl/goals/{{ goal.id.bumpy_case|lower }}impl.h>
+{%- endfor %}
+
+{%- for plan in model.plans %}
+#include <{{ project.bumpy_case|lower }}/impl/plans/{{ plan.id.bumpy_case|lower }}impl.h>
+{%- endfor %}
+
+{%- for resource in model.resources %}
+#include <{{ project.bumpy_case|lower }}/meta/resources/{{ resource.id.bumpy_case|lower }}meta.h>
+{%- endfor %}
+
+/// Sim
+#if defined(JACK_WITH_SIM)
+#include <sim/sim.h>
+#include <sim/simjson.h>
+#include <sim/utils.h>
+#endif /// defined(JACK_WITH_SIM)
+
+/// JACK
+#include <jack/builders/agentbuilder.h>
+#include <jack/builders/actionbuilder.h>
+#include <jack/builders/rolebuilder.h>
+#include <jack/builders/coroutinebuilder.h>
+#include <jack/builders/planbuilder.h>
+#include <jack/builders/servicebuilder.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+static void initMessages([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    /// Register the custom type to use in message schemas
+    [[maybe_unused]] aos::jack::FieldRegistry& registry = aos::jack::FieldRegistry::getInstance();
+    {%- for msg in model.messages %}
+    registry.registerType<{{ msg.id.bumpy_case }}>(
+        "{{ msg.id.qualified_name() }}",
+        &{{ msg.id.bumpy_case }}::anyToMessage,
+        nullptr,
+        &{{ msg.id.bumpy_case }}::anyToJSON,
+        nullptr,
+        &{{ msg.id.bumpy_case }}::anyToNlohmannJSON);
+    {%- endfor %}
+
+    {%- for msg in model.messages %}
+    registry.registerType<std::vector<{{ msg.id.bumpy_case }}>>(
+        "{{ msg.id.qualified_name() }}[]",
+        nullptr,
+        &{{ msg.id.bumpy_case }}::anyArrayToMessage,
+        nullptr,
+        &{{ msg.id.bumpy_case }}::anyArrayToJSON,
+        &{{ msg.id.bumpy_case }}::anyToNlohmannJSON);
+    {%- endfor %}
+
+    /// Create message schemas
+    {%- for msg in model.messages %}
+    bdi.commitMessageSchema(&{{ msg.id.bumpy_case }}::schema());
+    {%- endfor %}
+}
+
+static void initActions([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for action in model.actions %}
+    bdi.action("{{ action.id.qualified_name() }}")
+        {%- if workspace.find_message(action.request.as_ref()) %}
+        .request("{{ action.request.qualified_name() }}")
+        {%- endif %}
+        {%- if workspace.find_message(action.reply.as_ref()) %}
+        .reply("{{ action.reply.qualified_name() }}")
+        {%- endif %}
+        {%- if workspace.find_message(action.feedback.as_ref()) %}
+        .feedback("{{ action.feedback.qualified_name() }}")
+        {%- endif %}
+        .commit();
+    {%- endfor %}
+}
+
+static void initRoles([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for role in model.roles %}
+
+    { /// {{ role.id.bumpy_case }}
+        {%- if role.goals.len() > 0 %}
+        const std::string_view goalList[] = {
+            {%- for goal in role.goals %}
+            "{{ goal.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        bdi.role("{{ role.id.qualified_name() }}")
+           {%- if role.goals.len() > 0 %}
+           .goalNames(goalList)
+           {%- endif %}
+           {%- for message in workspace.get_role(role.id.as_ref()).unwrap().messages %}
+           .beliefs({{ message.id.bumpy_case }}::schema().m_name, aos::jack::RoleBeliefSet::ReadAccess::{% if message.read %}YES{% else %}NO{% endif %}, aos::jack::RoleBeliefSet::WriteAccess::{% if message.write %}YES{% else %}NO{% endif %})
+           {%- endfor %}
+           .commit();
+    }
+    {%- endfor %}
+}
+
+static void initResources([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for resource in model.resources %}
+    {{ resource.id.bumpy_case }}Meta::init(bdi);
+    {%- endfor %}
+}
+
+static void initGoals([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for goal in model.goals %}
+    bdi.goal("{{ goal.id.qualified_name() }}")
+       .message("{{ goal.message.qualified_name() }}")
+       .commit<{{ goal.id.bumpy_case }}>();
+    {%- endfor %}
+}
+
+static void initPlans([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for plan in model.plans %}
+    { /// {{ plan.id.bumpy_case }}
+        aos::jack::CoroutineBuilder coroutine = bdi.coroutine();
+        {%- for task in plan.tasks %}
+        {%- if task.get_type() == TaskType::condition %}
+        coroutine.cond([](const aos::jack::BeliefContext& context){ return {{ plan.id.bumpy_case }}::cond{{ task.get_condition_text().as_str() }}(context); }, aos::jack::UniqueId({{ plan.id32_to_hex16_pair_string(task.id.as_str()) }}));
+        {%- else if task.get_type() == TaskType::sleep %}
+        coroutine.sleep({{ task.duration.unwrap() }}, aos::jack::UniqueId({{ plan.id32_to_hex16_pair_string(task.id.as_str()) }}));
+        {%- else if task.get_type() == TaskType::action %}
+        coroutine.{{ task.get_type() }}("{{ task.action.as_ref().unwrap().qualified_name() }}", aos::jack::UniqueId({{ plan.id32_to_hex16_pair_string(task.id.as_str()) }}));
+        {%- else if task.get_type() == TaskType::goal %}
+        coroutine.{{ task.get_type() }}("{{ task.goal.as_ref().unwrap().qualified_name() }}", aos::jack::UniqueId({{ plan.id32_to_hex16_pair_string(task.id.as_str()) }}));
+        {%- endif %}
+
+        int32_t label{{ plan.task_number_id_label(task.id.as_str()) }} = {};
+        coroutine.label(label{{ plan.task_number_id_label(task.id.as_str()) }});
+        {%- if task.get_type() == TaskType::action %}
+            {%- if workspace.find_action(task.action.as_ref().unwrap()) %}
+                {%- for param in workspace.get_message_fields(workspace.get_action_request_msg_name(task.action.as_ref().unwrap()).as_ref().unwrap()) %}
+                    {%- if task.is_literal_mapping(param.clone()) %}
+        coroutine.param<{{ param.to_schema_cpp_type(workspace).unwrap() }}>("{{ param.name }}", { {{ task.get_mapping(param.name.as_ref()).unwrap() }} });
+                    {%- else if task.has_mapping(param.name.as_ref()) %}
+        coroutine.paramFrom("{{ param.name }}", "{{ task.get_mapping(param.name.as_ref()).unwrap() }}");
+                    {%- endif %}
+                {%- endfor %}
+            {%- endif %}
+        {%- else if task.get_type() == TaskType::goal %}
+            {%- if workspace.find_goal(task.goal.as_ref().unwrap()) %}
+            {%- let goal_obj = workspace.get_goal(task.goal.as_ref().unwrap()).unwrap() %}
+                {%- for param in workspace.get_message_fields(goal_obj.message.as_ref()) %}
+                    {%- if task.is_literal_mapping(param.clone()) %}
+        coroutine.param<{{ param.to_schema_cpp_type(workspace).unwrap() }}>("{{ param.name }}", { {{ task.get_mapping(param.name.as_ref()).unwrap() }} });
+                    {%- else if task.has_mapping(param.name.as_ref()) %}
+        coroutine.paramFrom("{{ param.name }}", "{{ task.get_mapping(param.name.as_ref()).unwrap() }}");
+                    {%- endif %}
+                {%- endfor %}
+            {%- endif %}
+        {%- endif %}
+        {%- if task.is_async() %}
+        coroutine.nowait();
+        {%- endif %}
+        {%- endfor %}
+
+        /// \note Configure task execution graph
+        {%- for task in plan.tasks %}
+        coroutine.configure(label{{ plan.task_number_id_label(task.id.as_str()) }})
+            {%- for edge in plan.edges %}
+                {%- if task.id == edge.sourceid %}
+                    {%- if edge.condition == "false" %}
+                    .onFail
+                    {%- else -%}
+                    .onSuccess
+                    {%- endif %}
+
+                    {%- if edge.targetid == "end" -%}
+                    (aos::jack::Coroutine::TERMINAL_LABEL)
+                    {%- else -%}
+                    (label{{ plan.task_number_id_label(edge.targetid.as_str()) }})
+                    {%- endif -%}
+                {%- endif %}
+            {%- endfor %};
+        {%- endfor %}
+
+        bdi.plan("{{ plan.id.qualified_name() }}")
+           .handles("{{ plan.handles.qualified_name() }}")
+           .body(coroutine)
+           .commit<{{ plan.id.bumpy_case }}>();
+    }
+    {%- endfor %}
+}
+
+static void initServices([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for service in model.services %}
+
+    { /// {{ service.id.bumpy_case }}
+        {%- if service.topics.len() > 0 %}
+        const std::string_view msgList[] = {
+            {%- for topic in service.topics %}
+            "{{ topic.message.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        bdi.service({{ service.id.bumpy_case }}::MODEL_NAME)
+            {%- if service.topics.len() > 0 %}
+            .messageNames(msgList)
+            {%- endif %}
+            .commit<{{ service.id.bumpy_case }}>();
+    }
+    {%- endfor %}
+}
+
+static void initTactics([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    {%- for tactic in model.tactics %}
+    { /// {{ tactic.id.bumpy_case }}
+        {%- if tactic.plan_list.len() > 0 %}
+        const std::string_view planList[] = {
+           {%- for plan in tactic.plan_list %}
+           "{{ plan.qualified_name() }}"sv,
+           {%- endfor %}
+        };
+        {%- endif %}
+
+        bdi.tactic("{{ tactic.id.qualified_name() }}")
+           .goal("{{ tactic.goal.qualified_name() }}")
+           .usePlanList({{ tactic.use_plan_list }})
+           .planOrder(aos::jack::Tactic::PlanOrder::{{ tactic.plan_order.to_string() }})
+           .loopPlansCount(static_cast<uint32_t>({{ tactic.plan_loop }}))
+           {% if tactic.plan_list.len() > 0 %}
+           .planNames(planList)
+           {% endif %}
+           .commit();
+    }
+    {%- endfor %}
+}
+
+static void initAgents([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    /// Add the agent templates to the engine under their runtime name
+    {%- for agent in model.agents %}
+
+    { /// {{ agent.id.bumpy_case }}
+        {%- if agent.services.len() > 0 %}
+        const std::string_view serviceList[] = {
+            {%- for service in agent.services %}
+            "{{ service.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.roles.len() > 0 %}
+        const std::string_view roleList[] = {
+            {%- for role in agent.roles %}
+            "{{ role.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.plans.len() > 0 %}
+        const std::string_view planList[] = {
+            {%- for plan in agent.plans %}
+            "{{ plan.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.has_desires() %}
+        const std::string_view desireList[] = {
+            {%- for desire in agent.desires() %}
+            "{{ desire.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.beliefs.len() > 0 %}
+        const std::string_view beliefList[] = {
+            {%- for belief in agent.beliefs %}
+            "{{ belief.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.has_tactics() %}
+        const std::string_view tacticList[] = {
+            {%- for tactic in agent.tactics() %}
+            "{{ tactic.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if agent.resources.len() > 0 %}
+        const std::string_view resourceList[] = {
+            {%- for resource in agent.resources %}
+            "{{ resource.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        /// Configure the agent
+        bdi.agent({{ agent.id.bumpy_case }}::MODEL_NAME)
+            {%- if agent.services.len() > 0 %}
+            .serviceNames(serviceList)
+            {%- endif %}
+            {%- if agent.roles.len() > 0 %}
+            .roleNames(roleList)
+            {%- endif %}
+            {%- if agent.plans.len() > 0 %}
+            .planNames(planList)
+            {%- endif %}
+            {%- if agent.has_desires() %}
+            .desireNames(desireList)
+            {%- endif %}
+            {%- if agent.beliefs.len() > 0 %}
+            .beliefNames(beliefList)
+            {%- endif %}
+            {%- if agent.has_tactics() %}
+            .tacticNames(tacticList)
+            {%- endif %}
+            {%- if agent.resources.len() > 0 %}
+            .resourceNames(resourceList)
+            {%- endif %}
+            {%- for goal in agent.goals %}
+            {%- for resource in workspace.get_goal(goal.id.as_ref()).unwrap().resources  %}
+            .maintains(bdi.resource("{{ resource.qualified_name() }}"), bdi.goal("{{ goal.id.as_ref().qualified_name() }}"))
+            {%- endfor %}
+            {%- endfor %}
+            .commitAsAgent<{{ agent.id.bumpy_case }}>();
+    }
+    {%- endfor %}
+}
+
+static void initTeams([[ maybe_unused ]] aos::jack::Engine& bdi)
+{
+    /// Add the team templates to the engine under their runtime name
+    {%- for team in model.teams %}
+
+    { /// {{ team.id.bumpy_case }}
+        {%- if team.services.len() > 0 %}
+        const std::string_view serviceList[] = {
+            {%- for service in team.services %}
+            "{{ service.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.roles.len() > 0 %}
+        const std::string_view roleList[] = {
+            {%- for role in team.roles %}
+            "{{ role.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.plans.len() > 0 %}
+        const std::string_view planList[] = {
+            {%- for plan in team.plans %}
+            "{{ plan.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.has_desires() %}
+        const std::string_view desireList[] = {
+            {%- for desire in team.desires() %}
+            "{{ desire.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.beliefs.len() > 0 %}
+        const std::string_view beliefList[] = {
+            {%- for belief in team.beliefs %}
+            "{{ belief.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.has_tactics() %}
+        const std::string_view tacticList[] = {
+            {%- for tactic in team.tactics() %}
+            "{{ tactic.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        {%- if team.resources.len() > 0 %}
+        const std::string_view resourceList[] = {
+            {%- for resource in team.resources %}
+            "{{ resource.qualified_name() }}"sv,
+            {%- endfor %}
+        };
+        {%- endif %}
+
+        /// Configure the agent
+        bdi.agent({{ team.id.bumpy_case }}::MODEL_NAME)
+            {%- if team.services.len() > 0 %}
+            .serviceNames(serviceList)
+            {%- endif %}
+            {%- if team.roles.len() > 0 %}
+            .roleNames(roleList)
+            {%- endif %}
+            {%- if team.plans.len() > 0 %}
+            .planNames(planList)
+            {%- endif %}
+            {%- if team.has_desires() %}
+            .desireNames(desireList)
+            {%- endif %}
+            {%- if team.beliefs.len() > 0 %}
+            .beliefNames(beliefList)
+            {%- endif %}
+            {%- if team.has_tactics() %}
+            .tacticNames(tacticList)
+            {%- endif %}
+            {%- if team.resources.len() > 0 %}
+            .resourceNames(resourceList)
+            {%- endif %}
+            {%- for goal in team.goals %}
+            {%- for resource in workspace.get_goal(goal.id.as_ref()).unwrap().resources  %}
+            .maintains(bdi.resource("{{ resource.qualified_name() }}"), bdi.goal("{{ goal.id.as_ref().qualified_name() }}"))
+            {%- endfor %}
+            {%- endfor %}
+            .commitAsTeam<{{ team.id.bumpy_case }}>();
+    }
+    {%- endfor %}
+}
+
+/******************************************************************************
+ * Static Functions
+ ******************************************************************************/
+void {{ project.bumpy_case }}::initModel(aos::jack::Engine& bdi) {
+
+    /// Initializes the jack engine
+    initMessages(bdi);
+    initActions(bdi);
+    initResources(bdi);
+    initGoals(bdi);
+    initPlans(bdi);
+    initRoles(bdi);
+    initServices(bdi);
+    initTactics(bdi);
+    initAgents(bdi);
+    initTeams(bdi);
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+{% for agent in model.agents %}
+aos::jack::AgentHandle {{ project.bumpy_case }}::create{{ agent.id.bumpy_case }}(aos::jack::Engine& eng, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto result = eng.createAgent({{ agent.id.bumpy_case }}::MODEL_NAME, name, uuid);
+    return result;
+}
+{% endfor %}
+
+{%- for agent in model.agents %}
+{{ agent.id.bumpy_case }}* {{ project.bumpy_case }}::create{{ agent.id.bumpy_case }}Instance(aos::jack::Engine& eng, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto* result = dynamic_cast<{{ agent.id.bumpy_case }}*>(eng.createAgentInstance({{ agent.id.bumpy_case }}::MODEL_NAME, name, uuid));
+    return result;
+}
+{%- endfor %}
+
+{% for team in model.teams %}
+aos::jack::AgentHandle {{ project.bumpy_case }}::create{{ team.id.bumpy_case }}(aos::jack::Engine& eng, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto result = eng.createAgent({{ team.id.bumpy_case }}::MODEL_NAME, name, uuid);
+    return result;
+}
+{% endfor %}
+
+{% for team in model.teams %}
+{{ team.id.bumpy_case }}* {{ project.bumpy_case }}::create{{ team.id.bumpy_case }}Instance(aos::jack::Engine& eng, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto* result = dynamic_cast<{{ team.id.bumpy_case }}*>(eng.createTeamInstance({{ team.id.bumpy_case }}::MODEL_NAME, name, uuid));
+    JACK_ASSERT(result && result->isTeam());
+    return result;
+}
+{% endfor %}
+
+{% for service in model.services %}
+aos::jack::ServiceHandle {{ project.bumpy_case }}::create{{ service.id.bumpy_case }}(aos::jack::Engine& eng, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid)
+{
+    auto result = eng.createService({{ service.id.bumpy_case }}::MODEL_NAME, name, proxy, uuid);
+    return result;
+}
+{% endfor %}
+
+{% for service in model.services %}
+{{ service.id.bumpy_case }}* {{ project.bumpy_case }}::create{{ service.id.bumpy_case }}Instance(aos::jack::Engine& eng, std::string_view name, bool proxy, const aos::jack::UniqueId& uuid)
+{
+    auto* result = dynamic_cast<{{ service.id.bumpy_case }}*>(eng.createServiceInstance({{ service.id.bumpy_case }}::MODEL_NAME, name, proxy, uuid));
+    JACK_ASSERT(result);
+    return result;
+}
+{% endfor %}
+
+/******************************************************************************
+ * Static Functions
+ ******************************************************************************/
+
+#if defined(JACK_WITH_SIM)
+void {{ project.bumpy_case }}::initSimModel(aos::sim::SimulationBase* sim)
+{
+    if (!sim) {
+        return;
+    }
+    /// @todo: The editor uses the model name but it strips spaces from the
+    /// name. Here I mangle the name of the component so its uniform. We however 
+    /// should only use the model name verbatim.
+    {%- for msg in model.messages %}
+    sim->addJsonComponentCreator({{ project.cpp_namespace_string() }}::{{ msg.id.bumpy_case }}::MODEL_NAME, {{ project.cpp_namespace_string() }}::{{ msg.id.bumpy_case }}::JsonConfig::parseJson);
+    {%- endfor %}
+
+    {%- for service in model.services %}
+    sim->addJsonComponentCreator({{ service.id.bumpy_case }}Component::COMPONENT_NAME, {{ project.cpp_namespace_string() }}::{{ service.id.bumpy_case }}Component::JsonConfig::parseJson);
+    {%- endfor %}
+
+    {%- for event in model.events %}
+    sim->registerDefaultSimEventHandlerWithName<{{ event.id.bumpy_case }}>({{ event.id.bumpy_case }}::MODEL_NAME);
+    {%- endfor %}
+}
+
+bool {{ project.bumpy_case }}::addComponentToEntity(aos::jack::Engine& engine, aos::sim::EntityWrapper entity, std::string_view componentName, const aos::sim::JsonParsedComponent *config)
+{
+    if (!entity.valid()) {
+        return false;
+    }
+
+    /// \todo We can remove the JSON config since we code generate to/from JSON
+    /// serialisation routines in the base class anyway. JSON config is used
+    /// here temporarily.
+    {%- if model.get_component_messages().len() > 0 %}
+    bool handledAsComponent = true;
+
+    {%- for msg in model.get_component_messages() %}
+    {%- if loop.index0 == 0 %}
+    if (componentName == {{ msg.id.bumpy_case }}::MODEL_NAME || componentName == aos::sim::removeSpaces({{ msg.id.bumpy_case }}::MODEL_NAME)) {
+    {%- else %}
+    } else if (componentName == {{ msg.id.bumpy_case }}::MODEL_NAME || componentName == aos::sim::removeSpaces({{ msg.id.bumpy_case }}::MODEL_NAME)) {
+    {%- endif %}
+        auto& component = *entity.m_handle.assign<{{ msg.id.bumpy_case }}>();
+        if (const auto *c = dynamic_cast<const {{ msg.id.bumpy_case }}::JsonConfig *>(config)) {
+            /// \todo @performance Waste of cycles here! We do a roundtrip conversion for no reason.
+            auto configRoundTripWasteOfCyclesRemoveThisWhenYouCan = nlohmann::json(*c);
+            from_json(configRoundTripWasteOfCyclesRemoveThisWhenYouCan, component);
+        }
+    {%- endfor %}
+    } else {
+        handledAsComponent = false;
+    }
+    {%- else %}
+    bool handledAsComponent = false;
+    {%- endif %}
+
+    if (handledAsComponent) {
+        return true;
+    }
+
+    {%- if model.services.len() > 0 %}
+
+    bool handledAsService = true;
+    {%- for service in model.services %}
+    {%- if loop.index0 == 0 %}
+    if (componentName == {{ service.id.bumpy_case }}::COMPONENT_NAME || componentName == aos::sim::removeSpaces({{ service.id.bumpy_case }}::COMPONENT_NAME)) {
+    {%- else %}
+    } else if (componentName == {{ service.id.bumpy_case }}::COMPONENT_NAME || componentName == aos::sim::removeSpaces({{ service.id.bumpy_case }}::COMPONENT_NAME)) {
+    {%- endif %}
+        auto& service = *entity.m_handle.assign<{{ service.id.bumpy_case }}Component>();
+        if (const auto *c = dynamic_cast<const {{ service.id.bumpy_case }}Component::JsonConfig *>(config)) {
+            aos::jack::UniqueId id = aos::jack::UniqueId::initFromString(c->uuid);
+            if (c->uuid.size()) {
+                JACK_ASSERT(id.valid());
+            } else {
+                id = aos::jack::UniqueId::random();
+            }
+            service = {{ service.id.bumpy_case}}Component(entity, engine, c->templateName, c->name, c->startService, c->proxyService, id);
+        }
+    {%- endfor %}
+    } else {
+        handledAsService = false;
+    }
+    return handledAsService;
+    {%- else %}
+    return false;
+    {%- endif %}
+
+}
+#endif /// defined(JACK_WITH_SIM)
+{{ project.emit_cpp_namespace_end() }}
+

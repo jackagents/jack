@@ -1,0 +1,40 @@
+.controlPointContainer {
+  position: absolute;
+  font-size: 12;
+  pointer-events: all;
+  z-index: 1002 !important;
+}
+
+.controlPointEventContainer {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controlPointEventContainer.active {
+  width: 500px;
+  height: 500px;
+}
+
+.controlPoint {
+  width: 20px;
+  height: 20px;
+  background: #fff319;
+  border: 1px solid #ddd41d;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.controlPoint:hover {
+  box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.08);
+}
+
+.react-flow__edge-interaction {
+  pointer-events: all;
+}

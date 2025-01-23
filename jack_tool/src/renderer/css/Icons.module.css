@@ -1,0 +1,9 @@
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.blinking {
+  animation: fade 0.4s infinite alternate;
+}

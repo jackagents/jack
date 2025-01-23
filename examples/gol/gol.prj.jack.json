@@ -1,0 +1,10 @@
+{
+    "name": "gol",
+    "jack_model_version": "0.6.0",
+    "modules": [
+        {
+            "name": "gol",
+            "path": "gol.mod.jack.json"
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+#ifndef JACK_BQLTOKENS_H
+#define JACK_BQLTOKENS_H
+
+enum BQLTokens
+{
+    BQL_SYMBOL = 1,
+    BQL_OPEN_PARENTHESES = 2,
+    BQL_CLOSE_PARENTHESES = 3,
+    BQL_LESS_THAN_OP = 4,
+    BQL_GREATER_THAN_OP = 5,
+    BQL_EQUAL = 6,
+    BQL_COMMA = 7, 
+    BQL_NUMBER = 8,
+    BQL_EXCLAMATION =  9
+};
+
+#endif

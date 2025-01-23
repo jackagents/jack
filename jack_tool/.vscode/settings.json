@@ -1,0 +1,14 @@
+{
+  "explorer.autoRevealExclude": {
+    "**/deprecated": true
+  },
+  "search.exclude": {
+    "**/deprecated": true
+  },
+  "files.watcherExclude": {
+    "**/deprecated/*/**": true
+  },
+  "files.exclude": {
+    "**/deprecated": true
+  }
+}

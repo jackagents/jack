@@ -1,0 +1,101 @@
+#include <{{ project.bumpy_case|lower }}/meta/{% if is_team %}teams{% else %}agents{% endif %}/{{ agent.id.bumpy_case|lower }}meta.h>
+
+/// Project
+#include <{{ project.bumpy_case|lower }}/impl/{% if is_team %}teams{% else %}agents{% endif %}/{{ agent.id.bumpy_case|lower }}impl.h>
+{%- for msg in workspace.get_messages_used_by_entity(agent.id.as_ref()) %}
+#include <{{ msg.get_owning_model(workspace).project.bumpy_case|lower }}/meta/messages/{{ msg.id.bumpy_case|lower }}meta.h>
+{%- endfor %}
+
+/// JACK
+#include <jack/corelib.h>
+#include <jack/engine.h>
+
+{{ project.emit_cpp_namespace_begin() }}
+/******************************************************************************
+ * Constructor/Destructors
+ ******************************************************************************/
+{{ agent.id.bumpy_case }}Meta::{{ agent.id.bumpy_case }}Meta(aos::jack::Engine& bdi, std::string_view name)
+: aos::jack::{% if is_team %}Team{% else %}Agent{% endif %}(bdi, name)
+{
+    setupHandlers();
+}
+
+{{ agent.id.bumpy_case }}Meta::{{ agent.id.bumpy_case }}Meta(const {{ agent.id.bumpy_case }}Meta* other, std::string_view name)
+: aos::jack::{% if is_team %}Team{% else %}Agent{% endif %}(other, name)
+{
+    setupHandlers();
+}
+
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+{%- for goal in agent.goals %}
+{%- let goal_obj = workspace.get_goal(goal.id.as_ref()).unwrap() %}
+{%- if  goal_obj.message.name.len() > 0 %}
+aos::jack::GoalPursue {{ agent.id.bumpy_case }}Meta::pursue{{ goal.id.as_ref().bumpy_case }}(std::shared_ptr<{{ goal_obj.message.bumpy_case }}> message, aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id)
+{
+    aos::jack::GoalPursue result = pursue("{{ goal.id.as_ref().qualified_name() }}", persistent, message, id);
+    return result;
+}
+aos::jack::GoalPursue {{ agent.id.bumpy_case }}Meta::pursue{{ goal.id.as_ref().bumpy_case }}(std::unique_ptr<{{ goal_obj.message.bumpy_case }}>&& message, aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id)
+{
+    std::shared_ptr<{{ goal_obj.message.bumpy_case }}> sharedPtr = std::move(message);
+    aos::jack::GoalPursue result = pursue("{{ goal.id.as_ref().qualified_name() }}", persistent, sharedPtr, id);
+    return result;
+}
+
+{%- else %}
+aos::jack::GoalPursue {{ agent.id.bumpy_case }}Meta::pursue{{ goal.id.as_ref().bumpy_case }}(aos::jack::GoalPersistent persistent, const aos::jack::UniqueId& id)
+{
+    aos::jack::GoalPursue result = pursue("{{ goal.id.as_ref().qualified_name() }}", persistent, {} /*message*/, id);
+    return result;
+}
+
+{%- endif %}
+{%- endfor %}
+
+aos::jack::Agent* {{ agent.id.bumpy_case }}Meta::clone(std::string_view name) const
+{
+    return JACK_NEW({{ agent.id.bumpy_case }}, static_cast<const {{ agent.id.bumpy_case }}*>(this), name);
+}
+
+void {{ agent.id.bumpy_case }}Meta::setupHandlers()
+{
+    {%- for action in workspace.get_actions_used_by_entity(agent.id.as_ref()) %}
+    addActionHandler("{{ action.id.qualified_name() }}", [](aos::jack::Agent& agent, [[maybe_unused]] aos::jack::Message& in, [[ maybe_unused ]] aos::jack::Message& out, aos::jack::ActionHandle handle)
+    {
+        {%- if workspace.get_message_fields(action.request.as_ref()).len() > 0 %}
+        const {{ action.request.bumpy_case }}& request = static_cast<{{ action.request.bumpy_case }}&>(in);
+        {%- endif %}
+        {%- if workspace.get_message_fields(action.reply.as_ref()).len() > 0 %}
+        {{ action.reply.bumpy_case }}& reply = static_cast<{{ action.reply.bumpy_case }}&>(out);
+        {%- endif %}
+        aos::jack::Event::Status result = static_cast<{{ agent.id.bumpy_case }}Meta&>(agent).on{{ action.id.bumpy_case }}({{ workspace.get_action_cpp_function_args(action).as_str() }});
+        {%- if workspace.get_message_fields(action.reply.as_ref()).len() > 0 %}
+        // out = std::move(reply.m_msg);
+        {%- endif %}
+        return result;
+    });
+    {%- endfor %}
+}
+
+/**************************************************************************
+ * Static Functions
+ **************************************************************************/
+aos::jack::AgentHandle {{ agent.id.bumpy_case }}Meta::create(aos::jack::Engine& bdi, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto result = bdi.createAgent(MODEL_NAME, name, uuid);
+    JACK_ASSERT(result.valid());
+    return result;
+}
+
+{{ agent.id.bumpy_case }}* {{ agent.id.bumpy_case }}Meta::createInstance(aos::jack::Engine& bdi, std::string_view name, const aos::jack::UniqueId& uuid)
+{
+    auto* result = dynamic_cast<{{ agent.id.bumpy_case }}*>(bdi.createAgentInstance(MODEL_NAME, name, uuid));
+    JACK_ASSERT(result);
+    {%- if is_team %}
+    JACK_ASSERT(result->isTeam());
+    {%- endif %}
+    return result;
+}
+{{ project.emit_cpp_namespace_end() }}

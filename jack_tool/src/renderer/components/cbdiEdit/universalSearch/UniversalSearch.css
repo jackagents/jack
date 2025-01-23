@@ -1,0 +1,57 @@
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: all 200ms ease-in-out;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+.universal-select-container {
+  height: 40px;
+}
+
+.universal-select__control {
+  width: 440px;
+  background-color: #444444 !important;
+}
+.universal-select__single-value,
+.universal-select__input-container {
+  color: white !important;
+  cursor: text;
+}
+
+.universal-select__indicator-separator,
+.universal-select__indicator {
+  display: none !important;
+}
+
+.universal-select__menu {
+  height: 500px;
+  background-color: #222222 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.universal-select__menu-list {
+  max-height: 100% !important;
+}
+
+.universal-select__option {
+  background-color: transparent !important;
+  cursor: pointer !important;
+  color: white !important;
+}
+
+.universal-select__option--is-focused {
+  background-color: #555555 !important;
+}
+
+.universal-select_fuzzy-highlight {
+  color: #49abff !important;
+  font-weight: 600 !important;
+}

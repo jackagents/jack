@@ -1,0 +1,21 @@
+2022-05-01 v0.2.0
+    - Tool redeveloped in Rust as an experiment into feasibility.
+    - Add support for tactics, services, parameter mapping in plans and actions
+    - Support for plans with conditions
+
+2021-02-11 v0.1.1
+    - Remove onInit(...) from Agent and Team template files, pre-existing JACK projects can be
+      updated by removing the onInit(...) stubs from the *impl.h/cpp files.
+    - Add support for parsing *.jackresource files in jack-make and generating resource code
+    - Add maintenance goal support to *.jackagent files as an array of goal and resource objects.
+    - Fix: Plan effects being code-generated with a const BeliefContext. Effects must mutate the
+      BeliefContext to simulate the effects of completing the plan. Old projects must update their
+      plan *impl.h/cpp files that utilise effects to remove the const qualifier from the
+      BeliefContext parameter.
+    - Fix crash on attempting to generate on empty projects attempting to access non-available files
+    - Improve whitespacing of generated code layout
+    - Ensure resources are initialized before agents thay may potentially use the resource
+    - Removed unused "this" pointer in action handling lambdas causing warnings on GCC/Clang
+
+2020-12-16 v0.1.0
+    - Initial release

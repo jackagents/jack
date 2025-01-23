@@ -1,0 +1,126 @@
+{{ project.emit_cpp_header_guard_begin("EVENTS", "") }}
+
+{{ project.emit_cpp_is_automatically_generated_comment() }}
+
+/// {{ project.bumpy_case }}
+{%- for event in model.events %}
+{{ workspace.emit_cpp_message_include(event.message.id.as_ref()) }}
+{%- endfor %}
+
+/// Sim
+#include <sim/simevent.h>
+#include <sim/sim.h>
+
+/// JACK
+#include <jack/handles.h>
+
+/// Third Party
+#include <nlohmann/json.hpp>
+#include <string>
+#include <string_view>
+
+{{ project.emit_cpp_namespace_begin() }}
+{%- for event in model.events %}
+
+struct {{ event.id.bumpy_case }} : public aos::sim::SimEvent
+{
+    /**************************************************************************
+     * Constructor/Destructors
+     **************************************************************************/
+    {%- if event.message.defaults.is_empty() %}
+    {{ event.id.bumpy_case }}() = default;
+    {%- else %}
+    {{ event.id.bumpy_case }}()
+    {
+        {%- for default in event.message.defaults %}
+        {{ default.field_member_assignment_string_to_cpp_code("data.") }}
+        {%- endfor %}
+    }
+    {%- endif %}
+
+    {{ event.id.bumpy_case }}(
+        const {{ event.message.id.bumpy_case }}& data,
+        const aos::jack::ActionHandle& handle = {},
+        float dispatchTime = 0.f)
+        : aos::sim::SimEvent(dispatchTime, handle)
+        , data(data)
+    {
+    }
+
+    {{ event.id.bumpy_case }}(
+        {%- for field in workspace.get_message_fields(event.message.id.as_ref()) %}
+        {%- if field.is_enum() %}
+        const {{ field.enum_type() }}& {{ field.bumpy_case }},
+        {%- else %}
+        const {{ field.to_cpp_type(workspace).unwrap() }}& {{ field.bumpy_case }},
+        {%- endif %}
+        {%- endfor %}
+        const aos::jack::ActionHandle& handle_ = {},
+        float dispatchTime_ = 0.f)
+        : aos::sim::SimEvent(dispatchTime_, handle_)
+    {
+        {%- for field in workspace.get_message_fields(event.message.id.as_ref()) %}
+        data.{{ field.bumpy_case }} = {{ field.bumpy_case }};
+        {%- endfor %}
+    }
+
+    {{ event.id.bumpy_case }}(const aos::jack::ActionHandle& handle, float dispatchTime = 0.f)
+        : aos::sim::SimEvent(dispatchTime, handle)
+    {
+        {%- for default in event.message.defaults %}
+        {{ default.field_member_assignment_string_to_cpp_code("data.") }}
+        {%- endfor %}
+    }
+
+    /**************************************************************************
+     * Functions
+     **************************************************************************/
+    std::string explain() const override final { return "{{ event.message.id.name }} executing"; }
+
+    /**************************************************************************
+     * Fields
+     **************************************************************************/
+    {%- if event.requires_entity %}
+    aos::sim::EntityID source = {}; /// Entity that created this event
+    {%- endif %}
+    {{ event.message.id.bumpy_case }} data = {};
+
+    /**************************************************************************
+     * Static Fields
+     **************************************************************************/
+    static constexpr inline std::string_view NOTE       = "{{ event.note.clone() }}";
+
+    static constexpr inline std::string_view CLASS_NAME = "{{ event.id.bumpy_case }}";
+
+    static constexpr inline std::string_view MODEL_NAME = "{{ event.id.name }}";
+
+    /**************************************************************************
+     * JSON
+     **************************************************************************/
+    friend void to_json([[maybe_unused]] nlohmann::json& dest, [[maybe_unused]] const {{ event.id.bumpy_case }}& src)
+    {
+        {%- for field in workspace.get_message_fields(event.message.id.as_ref()) %}
+        dest["{{ field.name }}"] = src.data.{{ field.bumpy_case }};
+        {%- endfor %}
+        dest["dispatchTime"] = src.dispatchTime;
+        {%- if event.requires_entity %}
+        dest["source"] = src.source;
+        {%- endif %}
+    }
+
+    friend void from_json([[maybe_unused]] const nlohmann::json& src, [[maybe_unused]] {{ event.id.bumpy_case }}& dest)
+    {
+        const static {{ event.message.id.bumpy_case }} defaultValue = {};
+        {%- for field in workspace.get_message_fields(event.message.id.as_ref()) %}
+        dest.data.{{ field.bumpy_case }} = src.value("{{ field.name }}", defaultValue.{{ field.bumpy_case }});
+        {%- endfor %}
+        dest.dispatchTime = src.value("dispatchTime", 0.0f);
+        {%- if event.requires_entity %}
+        dest.source = src.value("source", aos::sim::EntityID());
+        {%- endif %}
+        //dest.data.m_valid = true;
+    }
+};
+{%- endfor %}
+{{ project.emit_cpp_namespace_end() }}
+{{ project.emit_cpp_header_guard_end("EVENTS", "") }}

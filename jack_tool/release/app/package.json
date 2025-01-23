@@ -1,0 +1,20 @@
+{
+  "name": "AOS",
+  "version": "1.3.0",
+  "description": "AOS CBDI-Geo Client",
+  "license": "UNLICENSED",
+  "author": {
+    "name": "Agent Oriented Software Ltd",
+    "url": "https://aosgrp.com/"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run electron-rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.6.0",
+    "websocket": "^1.0.34"
+  }
+}

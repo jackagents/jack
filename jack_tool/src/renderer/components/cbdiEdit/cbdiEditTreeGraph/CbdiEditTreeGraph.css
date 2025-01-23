@@ -1,0 +1,12 @@
+.cbdiEditTreeGraph .react-flow__attribution a {
+  color: black;
+}
+
+.cbdiEditTreeGraph .react-flow__controls-button {
+  margin-bottom: 5px;
+}
+/* ---------------------------- custom node style --------------------------- */
+
+.cbdiEditTreeGraph .react-flow__node :hover .nodeLabel {
+  color: orange !important;
+}

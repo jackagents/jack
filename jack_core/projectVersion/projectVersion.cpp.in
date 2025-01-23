@@ -1,0 +1,47 @@
+#include <@productName@/@productName@_version.h>
+
+namespace aos::jack
+{
+std::string_view version()
+{
+    return "@PROJECT_VERSION@";
+}
+
+unsigned int versionMajor()
+{
+    return @PROJECT_VERSION_MAJOR@U;
+}
+
+unsigned int versionMinor()
+{
+    return @PROJECT_VERSION_MINOR@U;
+}
+
+unsigned int versionPatch()
+{
+    return @PROJECT_VERSION_PATCH@U;
+}
+
+unsigned int versionTweak()
+{
+    return @COMMITS_SINCE_VERSION_CHANGE@U;
+}
+
+std::string_view versionGitHash()
+{
+    return "@GIT_HASH@";
+}
+
+bool versionIsGitDirty()
+{
+    return @GIT_DIRTY@;
+}
+
+std::string_view versionDetail()
+{
+    std::string_view result = versionIsGitDirty() ?
+                              "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@.@GIT_HASH@-dirty" :
+                              "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@.@GIT_HASH@";
+    return result;
+}
+} /// namespace aos::jack
