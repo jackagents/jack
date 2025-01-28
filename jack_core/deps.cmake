@@ -20,6 +20,8 @@ add_subdirectory(deps/googletest)
 add_subdirectory(deps/concurrentqueue)
 add_subdirectory(deps/fmt)
 add_subdirectory(deps/date)
+add_subdirectory(deps/nlohmann)
+
 
 if (JACK_WITH_STACKTRACE)
     add_subdirectory(deps/cpptrace)

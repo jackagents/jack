@@ -113,8 +113,6 @@ set(JACK_HEADERS
     jack/tasks/yielduntiltask.h
     jack/team.h
     jack/utils.h
-    nlohmann/json.hpp
-    nlohmann/json_fwd.hpp
 )
 
 add_library(jack_core STATIC)
