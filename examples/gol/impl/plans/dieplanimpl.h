@@ -1,6 +1,8 @@
 #ifndef GOL_DIE_PLAN_IMPL_H
 #define GOL_DIE_PLAN_IMPL_H
 
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/meta/plans/dieplanmeta.h>
 
 namespace aos::jack

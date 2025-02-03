@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 // Not in use
 // import { EventType, CBDIEvent } from 'misc/types/cbdi/cbdiTypes';
 // import { ParseData } from 'main/beBuilders/iwd/dataParser/ddsDataParser';

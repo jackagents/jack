@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { CBDIIntentionBuilder } from 'main/beBuilders/cbdi/intentionBuilder/cbdiIntentionBuilderNonFlatBuffer';
 import { NodeType, DelegationStatus, BDILogGoalIntentionResult, DelegationBody } from 'types/cbdi/cbdi-types-non-flatbuffer';
 import { CBDIAgent, CBDIService, CBDITeam } from 'types/cbdi/cbdi-models-non-flatbuffer';

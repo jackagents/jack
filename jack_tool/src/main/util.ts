@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { URL } from 'url';
 import path from 'path';
 import { BDILogIntentionsModel } from 'types/cbdi/cbdi-models-non-flatbuffer';

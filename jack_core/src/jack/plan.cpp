@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/plan.h>
 #include <jack/resource.h>
 #include <jack/agent.h>

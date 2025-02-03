@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { getPropValue, isProxyObj } from 'main/util';
 import { Event as NonFlatBufferEvent } from 'misc/types/cbdi/cbdi-types-non-flatbuffer';
 

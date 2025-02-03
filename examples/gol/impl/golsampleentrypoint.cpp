@@ -1,4 +1,7 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/meta/gol.h>
+
 
 int main(int /*argc*/, char **/*argv*/)
 {

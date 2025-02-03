@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 /* eslint-disable no-await-in-loop */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-shadow */

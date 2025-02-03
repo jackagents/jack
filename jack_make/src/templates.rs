@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 pub use crate::model::*;
 use std::error::Error;
 use std::path::PathBuf;

@@ -33,8 +33,8 @@ uuid         = { version = "1.6.1", features = ["v4",                 # Lets you
                                                 "macro-diagnostics"]} # Enable better diagnostics for compile-time UUIDs
 
 [package.metadata.deb]
-maintainer = "James Cooper <james.cooper@aosgrp.com.au>"
-copyright = "2023 AOS Group PTY LTD <admin@aosgrp.com>"
+maintainer = "Jack Support <code@jackagents.com>"
+copyright = "© LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025 <info@jackagents.com>"
 extended-description = "JACK Model Code Generation and Validation tool."
 depends = "$auto"
 section = "utility"

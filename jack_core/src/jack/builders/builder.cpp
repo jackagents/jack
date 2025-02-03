@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/builders/builder.h>
 #include <cstdint>   // for uint32_t
 #include <jack/corelib.h>

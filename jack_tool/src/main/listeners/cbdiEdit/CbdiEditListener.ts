@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 /* eslint-disable class-methods-use-this */
 import { dialog, ipcMain, IpcMainInvokeEvent } from 'electron';
 import { request as editorRequest, response as editorResponse } from 'projectEvents/cbdiEdit/editEvents';

@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/builders/planbuilder.h>
 #include <jack/builders/coroutinebuilder.h>
 #include <jack/builders/goalbuilder.h>

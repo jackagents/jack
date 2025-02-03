@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/engine/dispatch.h>
 #include <jack/events/event.h>       // for Event
 #include <jack/promise.h>            // for Promise, PromisePtr

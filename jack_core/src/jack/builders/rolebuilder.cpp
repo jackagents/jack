@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/builders/rolebuilder.h>
 #include <jack/builders/goalbuilder.h>    // for GoalBuilder
 #include <jack/engine.h>                  // for Engine

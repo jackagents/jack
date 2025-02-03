@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/beliefquery.h>
 #include <jack/beliefcontext.h>  // for BeliefContext
 #include <jack/bqltokens.h>      // for BQL_CLOSE_PARENTHESES, BQL_COMMA, BQL_EQUAL

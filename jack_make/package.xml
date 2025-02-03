@@ -3,9 +3,9 @@
 <package format="3">
   <name>jack_make</name>
   <version>0.6.0</version>
-  <description>jack make ROS2 package</description>
-  <maintainer email="aos-support@aosgrp.com.au">AOS Support</maintainer>
-  <license>AOS</license>
+  <description>JACK Make ROS2 package</description>
+  <maintainer email="code@jackagents.com">Jack Support</maintainer>
+  <license>Mozilla Public License Version 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
