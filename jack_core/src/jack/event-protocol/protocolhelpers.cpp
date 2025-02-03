@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/event-protocol/protocolhelpers.h>
 #include <jack/messageschema.h>
 #include <jack/engine.h>

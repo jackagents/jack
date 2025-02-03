@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import MODEL_BUILDER from 'main/beBuilders/cbdi/cbdiModelBuilder/cbdiModelBuilderNonFlatBuffer';
 import INTENTION_BUILDER from 'main/beBuilders/cbdi/intentionBuilder/cbdiIntentionBuilderNonFlatBuffer';
 import LOG_BUILDER from 'main/beBuilders/cbdi/logBuilder/cbdiLogBuilderNonFlatBuffer';

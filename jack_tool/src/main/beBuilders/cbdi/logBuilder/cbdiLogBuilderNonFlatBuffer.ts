@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { TCBDILogsDict } from 'misc/types/cbdi/cbdi-models-non-flatbuffer';
 import { Event, EventType } from 'misc/types/cbdi/cbdi-types-non-flatbuffer';
 import { BaseBuilder } from 'main/beBuilders/baseBuilder/BaseBuilder';

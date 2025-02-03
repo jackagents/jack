@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #pragma once
 
 /// \todo We used to have a protocol::Any for variants but I've removed that and

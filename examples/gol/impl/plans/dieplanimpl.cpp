@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/impl/plans/dieplanimpl.h>
 
 #include <gol/meta/messages/cellinfometa.h>

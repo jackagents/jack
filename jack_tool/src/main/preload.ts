@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { contextBridge, ipcRenderer, shell } from 'electron';
 import * as util from 'main/util';
 

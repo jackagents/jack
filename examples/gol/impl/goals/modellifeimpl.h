@@ -1,6 +1,8 @@
 #ifndef GOL_MODEL_LIFE_IMPL_H
 #define GOL_MODEL_LIFE_IMPL_H
 
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/meta/goals/modellifemeta.h>
 
 

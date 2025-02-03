@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/builders/coroutinebuilder.h>
 #include <jack/coroutine.h>             // for Coroutine, CoroutinePtr
 #include <jack/builders/builder.h>      // for Builder

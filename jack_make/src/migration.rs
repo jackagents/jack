@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 //use argparse::{ArgumentParser, StoreTrue, StoreFalse, Store};
 use serde::Serialize;
 

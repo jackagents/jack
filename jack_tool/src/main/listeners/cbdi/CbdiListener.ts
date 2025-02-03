@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 /* eslint-disable class-methods-use-this */
 import WebSocketObj from 'main/websocketClient/WebSocketObj';
 import { eventListeners, request, response } from 'projectEvents/common/cmEvents';

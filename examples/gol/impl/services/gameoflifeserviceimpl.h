@@ -1,6 +1,8 @@
 #ifndef GOL_GAME_OF_LIFE_SERVICE_IMPL_H
 #define GOL_GAME_OF_LIFE_SERVICE_IMPL_H
 
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/meta/services/gameoflifeservicemeta.h>
 
 #include <gol/gameoflife.h>

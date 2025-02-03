@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 /* eslint-disable no-param-reassign */
 import { CBDIEditorProject } from 'misc/types/cbdiEdit/cbdiEditModel';
 

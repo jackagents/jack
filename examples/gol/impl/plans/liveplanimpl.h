@@ -1,6 +1,8 @@
 #ifndef GOL_LIVE_PLAN_IMPL_H
 #define GOL_LIVE_PLAN_IMPL_H
 
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/meta/plans/liveplanmeta.h>
 
 namespace aos::jack

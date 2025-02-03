@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/dag.h>
 #include <jack/plan.h>      // for Plan
 #include <jack/schedule.h>  // for SearchNode, Schedule

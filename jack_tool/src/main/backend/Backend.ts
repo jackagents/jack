@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import BaseListener from 'listeners/base/BaseListener';
 import LOGGER from 'misc/addons/logger/LoggerSingleton';

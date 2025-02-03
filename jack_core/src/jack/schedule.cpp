@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/agent.h>
 #include <jack/beliefcontext.h>          // for BeliefContext
 #include <jack/plan.h>                   // for Plan

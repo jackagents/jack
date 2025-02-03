@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 import fs from 'fs';
 import { FlatEdgeMetaDataModel, FlatMetaData, FlatNodeMetaDataModel } from 'misc/types/cbdiEdit/cbdiEditModel';
 import path from 'path';

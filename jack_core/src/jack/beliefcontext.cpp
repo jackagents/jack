@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <jack/beliefcontext.h>
 #include <jack/corelib.h>
 #include <jack/messageschema.h>

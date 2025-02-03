@@ -1,7 +1,8 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 #include <gol/impl/services/gameoflifeserviceimpl.h>
 #include <gol/meta/messages/cellcommandmeta.h>
 #include <gol/impl/agents/gameoflifeagentimpl.h>
-
 
 /******************************************************************************
  * Constructor/Destructors

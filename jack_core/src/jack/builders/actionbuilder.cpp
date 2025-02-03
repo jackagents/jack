@@ -1,3 +1,5 @@
+// © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
+
 /// JACK
 #include <jack/builders/actionbuilder.h>
 #include <jack/engine.h>
