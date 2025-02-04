@@ -1,0 +1,88 @@
+{
+    "project": {
+        "name": "tests",
+        "namespaces": [],
+        "major_version": "0",
+        "minor_version": "6",
+        "patch_version": "0",
+        "generator": "JACK Editor",
+        "modules": [],
+        "search_paths": []
+    },
+    "enums": [],
+    "teams": [],
+    "agents": [],
+    "tactics": [],
+    "roles": [],
+    "resources": [],
+    "actions": [],
+    "goals": [],
+    "plans": [],
+    "messages": [
+        {
+            "uuid": "35a2ac78-a284-4704-a205-d16d5db94f91",
+            "name": "Ping",
+            "module": "tests",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "count",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        },
+        {
+            "uuid": "3260f9f0-0bc1-4d39-9466-c33ffe603505",
+            "name": "Pong",
+            "module": "tests",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "count",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        },
+        {
+            "uuid": "108b994f-dd80-4ac9-bf00-0ecb9e3cc66d",
+            "name": "PingPong BeliefSet",
+            "module": "tests",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "count",
+                    "note": "",
+                    "type": "I32",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                },
+                {
+                    "name": "target",
+                    "note": "",
+                    "type": "String",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        }
+    ],
+    "services": [],
+    "entities": [],
+    "events": []
+}

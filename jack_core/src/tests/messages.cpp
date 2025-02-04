@@ -1,5 +1,11 @@
 // © LUCAS FIELD AUTONOMOUS AGRICULTURE PTY LTD, ACN 607 923 133, 2025
 
+#include <tests/meta/testsproject.h>
+
+#include <tests/meta/messages/pingmeta.h>
+#include <tests/meta/messages/pongmeta.h>
+#include <tests/meta/messages/pingpongbeliefsetmeta.h>
+
 #include <jack/jack.h>
 #include <gtest/gtest.h>
 
@@ -20,26 +26,23 @@ class MessageTest : public ::testing::Test {
     protected:
     MessageTest()
     {
+        // when all agents have stopped the engine will exit
         bdi.exitWhenDone();
     }
 
     void SetUp() override
     {
-        bdi.action("DoPing").commit();
-        bdi.action("DoPong").commit();
+        bdi.action("DoPing").request(Ping::MODEL_NAME).commit();
+        bdi.action("DoPong").request(Pong::MODEL_NAME).commit();
         bdi.action("Quit").commit();
 
         // prepare the goal that the agent will be using
-        bdi.goal("PingPongGoal").commit ();
+        bdi.goal("PingPongGoal").message(Ping::MODEL_NAME).commit();
 
-        // the plan is expected to invoke a predefined agent action
+        // Plans
         auto ping = bdi.plan("PingPlan")
                         .handles("PingPongGoal")
-                        .body(bdi.coroutine()
-                                  // TODO: pass in count param from the goal context
-                                  .action("DoPing")
-                              // action("DoPing").param("count", "$goal.count");
-                              )
+                        .body(bdi.coroutine().action("DoPing"))
                         .commit();
 
         auto pong = bdi.plan("PongPlan")
@@ -51,28 +54,19 @@ class MessageTest : public ::testing::Test {
         pongPlans.emplace_back(pong);
     }
 
-    jack::Engine    bdi;  //!< engine bdi initialization
+    tests    bdi;  // The JACK engine instance
     PlanList pingPlans;
     PlanList pongPlans;
 };
 
-// PING PONG AGENTS
+// PING PONG AGENTS TEST
 TEST_F(MessageTest, PingPong)
 {
-    auto pingMsg = bdi.message("Ping")
-                      .field<int>("count")
-                      .commit();
-
-    auto pongMsg = bdi.message("Pong")
-                      .field<int>("count")
-                      .commit();
-
     // a goal to quit
     bdi.goal("Quit")
         .pre([&](const jack::BeliefContext& context) {
-            auto       bs    = context.message("PingPongBeliefSet");
-            const auto count = *bs->getPtr<int>("count");
-            return count > 5;
+            const auto bs = context.getMessageAsPtr<const PingPongBeliefSet>();
+            return bs->count > 5;
         })
         .commit();
 
@@ -85,39 +79,46 @@ TEST_F(MessageTest, PingPong)
     pingPlans.emplace_back(kaPlan);
     pongPlans.emplace_back(kaPlan);
 
-    jack::MessageBuilder bs = bdi.message("PingPongBeliefSet")
-                                 .fieldWithValue<int>("count", 0)
-                                 .field<std::string>("target")
-                                 .commit();
-
-    // NOTE: I think an agent does need a context - for configuration
     jack::AgentHandle bobHandle = bdi.agent("PingAgent")
-                                     .belief(bs)
+                                     .beliefName(PingPongBeliefSet::MODEL_NAME)
                                      .plans(pingPlans)
-                                     .handleMessage("Pong", [&](jack::Agent &agent, const jack::Message &msg) {
-                                         int count = *msg.getConstPtr<int>("count");
-                                         agent.message("PingPongBeliefSet")->setFieldValue<int>("count", count);
+                                     .handleMessage(std::string(Pong::MODEL_NAME), [&](jack::Agent &agent, const jack::Message &msg) {
 
-                                         JACK_DEBUG("Bob got a pong message [count={}]", count);
-                                         agent.pursue("PingPongGoal", jack::GoalPersistent_No); // pass count as parameter to this pursue message
+                                        const Pong& m = dynamic_cast<const Pong&>(msg);
+
+                                        // store
+                                        const auto bs = agent.messageAsPtr<PingPongBeliefSet>();
+                                        bs->count = m.count;
+
+                                        // create ping message
+                                        auto goalMsg = std::make_shared<Ping>();
+                                        goalMsg->count = m.count;
+
+                                        JACK_INFO("Bob receives a pong message [count={}]", m.count);
+                                        agent.pursue("PingPongGoal", jack::GoalPersistent_No, goalMsg); // pass count as parameter to this pursue message
                                      })
                                      .handleAction("DoPing", [&](jack::Agent &agent, jack::Message &msg, jack::Message &out, jack::ActionHandle handle) {
-                                         std::shared_ptr<jack::Message> bSet = agent.message("PingPongBeliefSet");
 
-                                         int count             = *bSet->getPtr<int>("count");
-                                         auto targetUUIDString = *bSet->getPtr<std::string>("target");
+                                        const Ping& m = dynamic_cast<const Ping&>(msg);
 
-                                         auto targetUUID = jack::UniqueId::initFromString(targetUUIDString);
-                                         assert(targetUUID.valid());
+                                        const auto bs = agent.messageAsPtr<const PingPongBeliefSet>();
 
-                                         jack::Message reply = bdi.createMessage("Ping");
-                                         reply.setFieldValue("count", count + 1);
-                                         JACK_DEBUG("Bob sends a ping message to [target={}]", targetUUIDString);
+                                        auto count = m.count;
+                                        auto targetUUIDString = bs->target;
 
-                                         // TODO: should be possible to send this from the plan - protocols too
-                                         jack::Agent *to = bdi.getAgentByUUID(targetUUID);
-                                         to->sendMessageToHandler(std::move(reply));
-                                         return jack::Event::SUCCESS;
+                                        auto targetUUID = jack::UniqueId::initFromString(targetUUIDString);
+                                        assert(targetUUID.valid());
+
+                                        // create ping message
+                                        auto reply = std::make_unique<Ping>();
+                                        reply->count = count + 1;
+
+                                        jack::Agent *to = bdi.getAgentByUUID(targetUUID);
+                                        if(to->running()) {
+                                            JACK_INFO("Bob sending ping message to [target={}]", to->name());
+                                            to->sendMessageToHandler(std::move(reply));
+                                        }
+                                        return jack::Event::SUCCESS;
                                      })
                                      .handleAction("Quit", [&](jack::Agent &agent, jack::Message &msg, jack::Message &out, jack::ActionHandle handle) {
                                          agent.stop();
@@ -127,29 +128,42 @@ TEST_F(MessageTest, PingPong)
                                      .createAgent("bob");
 
     jack::AgentHandle sueHandle = bdi.agent("PongAgent")
-                                     .belief(bs)
+                                     .beliefName(PingPongBeliefSet::MODEL_NAME)
                                      .plans(pongPlans)
-                                     .handleMessage("Ping", [&] (jack::Agent &agent, const jack::Message& msg) {
-                                         int count = *msg.getConstPtr<int>("count");
-                                         agent.message("PingPongBeliefSet")->setFieldValue<int>("count", count);
+                                     .handleMessage(std::string(Ping::MODEL_NAME), [&] (jack::Agent &agent, const jack::Message& msg) {
 
-                                         JACK_DEBUG("Sue got a ping message [count={}]", count);
-                                         agent.pursue("PingPongGoal", jack::GoalPersistent_No); // pass count as parameter to this pursue message
+                                        const Ping& m = dynamic_cast<const Ping&>(msg);
+
+                                        const auto bs = agent.messageAsPtr<PingPongBeliefSet>();
+                                        bs->count = m.count;
+
+                                        auto goalMsg = std::make_shared<Ping>();
+                                        goalMsg->count = m.count;
+
+                                        JACK_INFO("Sue receives a ping message [count={}]", m.count);
+                                        agent.pursue("PingPongGoal", jack::GoalPersistent_No, goalMsg); // pass count as parameter to this pursue message
                                      })
                                      .handleAction("DoPong", [&] (jack::Agent &agent, jack::Message &msg, jack::Message &out, jack::ActionHandle handle) {
-                                         int count = *agent.message("PingPongBeliefSet")->getPtr<int>("count");
 
-                                         jack::Message reply = bdi.createMessage("Pong");
-                                         reply.setFieldValue("count", count + 1);
-                                         JACK_DEBUG_MSG("Sue sends a pong message to bob");
+                                        const auto bs = agent.messageAsPtr<const PingPongBeliefSet>();
 
-                                         std::string targetUUIDString = *agent.message("PingPongBeliefSet")->getPtr<std::string>("target");
-                                         auto targetUUID = jack::UniqueId::initFromString(targetUUIDString);
-                                         assert(targetUUID.valid());
+                                        const Pong& m = dynamic_cast<const Pong&>(msg);
 
-                                         jack::Agent *to = bdi.getAgentByUUID(targetUUID);
-                                         to->sendMessageToHandler(std::move(reply));
-                                         return jack::Event::SUCCESS;
+                                        auto count = m.count;
+                                        auto targetUUIDString = bs->target;
+
+                                        auto targetUUID = jack::UniqueId::initFromString(targetUUIDString);
+                                        assert(targetUUID.valid());
+
+                                        auto reply = std::make_unique<Pong>();
+                                        reply->count = count + 1;
+
+                                        jack::Agent *to = bdi.getAgentByUUID(targetUUID);
+                                        if(to->running()) {
+                                            JACK_INFO("Sue sending a pong message to [target={}]", to->name());
+                                            to->sendMessageToHandler(std::move(reply));
+                                        }
+                                        return jack::Event::SUCCESS;
                                      })
                                      .handleAction("Quit", [&](jack::Agent &agent, jack::Message &msg, jack::Message &out, jack::ActionHandle handle) {
                                         agent.stop();
@@ -161,9 +175,15 @@ TEST_F(MessageTest, PingPong)
     jack::Agent *bob = bdi.getAgent(bobHandle);
     jack::Agent *sue = bdi.getAgent(sueHandle);
 
-    // the agent context ??
-    bob->message("PingPongBeliefSet")->setFieldValue<std::string>("target", std::string(sueHandle.m_id.toString()));
-    sue->message("PingPongBeliefSet")->setFieldValue<std::string>("target", std::string(bobHandle.m_id.toString()));
+    // configure beliefs
+    {
+        const auto bs = bob->messageAsPtr<PingPongBeliefSet>();
+        bs->target = std::string(sueHandle.m_id.toString());
+    }
+    {
+        const auto bs = sue->messageAsPtr<PingPongBeliefSet>();
+        bs->target = std::string(bobHandle.m_id.toString());
+    }
 
     bob->start();
     sue->start();
@@ -171,8 +191,10 @@ TEST_F(MessageTest, PingPong)
     bob->pursue("Quit", jack::GoalPersistent_Yes);
     sue->pursue("Quit", jack::GoalPersistent_Yes);
 
-    // get bob to perform the first ping
-    bob->pursue("PingPongGoal", jack::GoalPersistent_No);
+    // send ping to sue
+    auto goalMsg = std::make_unique<Ping>();
+    goalMsg->count = 0;
+    sue->sendMessageToHandler(std::move(goalMsg));
 
     bdi.execute();
 

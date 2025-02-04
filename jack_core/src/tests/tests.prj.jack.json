@@ -1,0 +1,10 @@
+{
+    "name": "tests",
+    "jack_model_version": "0.6.0",
+    "modules": [
+        {
+            "name": "tests",
+            "path": "tests.mod.jack.json"
+        }
+    ]
+}

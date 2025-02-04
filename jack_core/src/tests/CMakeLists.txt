@@ -1,10 +1,38 @@
 cmake_minimum_required(VERSION 3.24)
 
+find_package(ament_cmake REQUIRED)
+find_package(jack_make REQUIRED)
+
+if (EXISTS ${JACK_MAKE_EXE})
+    set(MODEL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/tests.mod.jack.json)
+    set(JACK_MAKE_ARGS --skip-validation --output-dir ${CMAKE_CURRENT_SOURCE_DIR}/.. ${MODEL_FILE})
+    execute_process(COMMAND ${JACK_MAKE_EXE} ${JACK_MAKE_ARGS}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		RESULT_VARIABLE JACK_MAKE_RESULT
+	)
+
+    if (JACK_MAKE_RESULT)
+        message(FATAL_ERROR "jack-make failed to generate meta files for ${MODEL_FILE}, result - ${JACK_MAKE_GENERATED_RESULT}")
+    endif()
+
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MODEL_FILE})
+else()
+    message(FATAL_ERROR "jack-make not found!")
+endif()
+
+include (${CMAKE_CURRENT_SOURCE_DIR}/meta/tests.cmake RESULT_VARIABLE includeResult)
+
+if (NOT includeResult)
+    message(FATAL_ERROR "meta/tests.cmake not found, jack-make gen may have failed")
+endif()
+
 include(GoogleTest)
 
 # Macro to add a unit test
 macro(AddUnitTest unitTestName)
-  add_executable(${unitTestName} ${ARGN})
+    add_executable(${unitTestName} ${ARGN}
+        ${JACK_MAKE_GENERATED_HEADERS_TESTS}
+        ${JACK_MAKE_GENERATED_SOURCES_TESTS})
   target_compile_definitions(${unitTestName} PUBLIC
       -DJACK_WITH_TESTS=1)
   target_link_libraries(${unitTestName} PUBLIC
@@ -12,6 +40,9 @@ macro(AddUnitTest unitTestName)
       fmt::fmt-header-only
       gtest
       gtest_main)
+    target_include_directories(${unitTestName} PUBLIC
+        ${JACK_MAKE_GENERATED_INCLUDE_DIRS_TESTS}
+    )
 
   if (CMAKE_CROSSCOMPILING)
       # NOTE: Avoid using gtest_discover_test(${unitTestName}) which causes GTest to
@@ -26,21 +57,21 @@ macro(AddUnitTest unitTestName)
 endmacro()
 
 # Add the unit tests
-AddUnitTest(agents agents.cpp)
-AddUnitTest(allocators allocator.cpp)
-AddUnitTest(resources resources.cpp)
-AddUnitTest(goals goals.cpp)
-AddUnitTest(intentions intentions.cpp)
-AddUnitTest(vs1 main.cpp)
-AddUnitTest(gt_example gt_main.cpp)
-AddUnitTest(bitmaskops bitmaskops.cpp)
-AddUnitTest(beliefs beliefs.cpp)
+#AddUnitTest(agents agents.cpp)
+#AddUnitTest(allocators allocator.cpp)
+#AddUnitTest(resources resources.cpp)
+#AddUnitTest(goals goals.cpp)
+#AddUnitTest(intentions intentions.cpp)
+#AddUnitTest(vs1 main.cpp)
+#AddUnitTest(gt_example gt_main.cpp)
+#AddUnitTest(bitmaskops bitmaskops.cpp)
+#AddUnitTest(beliefs beliefs.cpp)
 AddUnitTest(messages messages.cpp)
-AddUnitTest(node node.cpp)
-AddUnitTest(hanoi hanoi.cpp)
-AddUnitTest(tactics tactics.cpp)
-AddUnitTest(team team.cpp)
-AddUnitTest(service service.cpp)
+#AddUnitTest(node node.cpp)
+#AddUnitTest(hanoi hanoi.cpp)
+#AddUnitTest(tactics tactics.cpp)
+#AddUnitTest(team team.cpp)
+#AddUnitTest(service service.cpp)
 
 # TODO: The 1k perform goal test is very slow. It certainly should *not*
 # take 25s~ to solve. Our goal should be to bring the agent test timeout

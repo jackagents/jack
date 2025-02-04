@@ -1,0 +1,6 @@
+# Node Data
+NodeId,PositionX,PositionY,Timestamp
+
+
+# Edge Data
+SourceId,TargetId,ControlPoints,Timestamp
