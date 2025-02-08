@@ -686,8 +686,6 @@ void Agent::eventDispatch(Event *rawEvent)
         case Event::MESSAGE: {
             ZoneNamedN(debugTracyAgentMessage, "Agent message event", true);
             MessageEvent*      event   = static_cast<MessageEvent*>(rawEvent);
-//            const Message&     msg     = event->msg;
-            //const auto& msg = event->msg;
             const std::string& msgName = event->msg->schema();
             ZoneNameV(debugTracyAgentMessage, msgName.c_str(), msgName.size());
 
@@ -704,12 +702,8 @@ void Agent::eventDispatch(Event *rawEvent)
                 m_lastTimeBeliefSetsDirtied   = std::chrono::duration_cast<std::chrono::milliseconds>(engine().internalClock());
                 std::shared_ptr<Message> bSet = message(msgName);
                 if (bSet) {
-                    //*bSet = std::move(msg);
-                    /// @todo override  the message with the new one
-                    /// just swap?
                     std::shared_ptr<Message> msg = std::move(event->msg);
                     context().addMessage(msg);
-
                     if (event->broadcastToBus && engine().haveBusAdapter()) {
                         if (!event->recipient) {
                             event->recipient = this;
