@@ -80,6 +80,42 @@
                 }
             ],
             "editor": []
+        },
+        {
+            "uuid": "f4b33fc1-c1f1-48ef-aa54-614292a5f39f",
+            "name": "AgentPlanSwitch",
+            "module": "tests",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "switchPlans",
+                    "note": "",
+                    "type": "Bool",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
+        },
+        {
+            "uuid": "83336be7-bfc4-4d7b-bdcc-c30e3ab249a3",
+            "name": "DummyFlag",
+            "module": "tests",
+            "note": "",
+            "component": false,
+            "fields": [
+                {
+                    "name": "flag",
+                    "note": "",
+                    "type": "Bool",
+                    "is_array": false,
+                    "default": "",
+                    "hidden": false
+                }
+            ],
+            "editor": []
         }
     ],
     "services": [],

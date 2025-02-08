@@ -9,6 +9,8 @@
 #include <tests/meta/messages/pingmeta.h>
 #include <tests/meta/messages/pongmeta.h>
 #include <tests/meta/messages/pingpongbeliefsetmeta.h>
+#include <tests/meta/messages/agentplanswitchmeta.h>
+#include <tests/meta/messages/dummyflagmeta.h>
 
 /// Sim
 #if defined(JACK_WITH_SIM)
@@ -51,6 +53,20 @@ static void initMessages([[ maybe_unused ]] aos::jack::Engine& bdi)
         &PingPongBeliefSet::anyToJSON,
         nullptr,
         &PingPongBeliefSet::anyToNlohmannJSON);
+    registry.registerType<AgentPlanSwitch>(
+        "tests.AgentPlanSwitch",
+        &AgentPlanSwitch::anyToMessage,
+        nullptr,
+        &AgentPlanSwitch::anyToJSON,
+        nullptr,
+        &AgentPlanSwitch::anyToNlohmannJSON);
+    registry.registerType<DummyFlag>(
+        "tests.DummyFlag",
+        &DummyFlag::anyToMessage,
+        nullptr,
+        &DummyFlag::anyToJSON,
+        nullptr,
+        &DummyFlag::anyToNlohmannJSON);
     registry.registerType<std::vector<Ping>>(
         "tests.Ping[]",
         nullptr,
@@ -72,11 +88,27 @@ static void initMessages([[ maybe_unused ]] aos::jack::Engine& bdi)
         nullptr,
         &PingPongBeliefSet::anyArrayToJSON,
         &PingPongBeliefSet::anyToNlohmannJSON);
+    registry.registerType<std::vector<AgentPlanSwitch>>(
+        "tests.AgentPlanSwitch[]",
+        nullptr,
+        &AgentPlanSwitch::anyArrayToMessage,
+        nullptr,
+        &AgentPlanSwitch::anyArrayToJSON,
+        &AgentPlanSwitch::anyToNlohmannJSON);
+    registry.registerType<std::vector<DummyFlag>>(
+        "tests.DummyFlag[]",
+        nullptr,
+        &DummyFlag::anyArrayToMessage,
+        nullptr,
+        &DummyFlag::anyArrayToJSON,
+        &DummyFlag::anyToNlohmannJSON);
 
     /// Create message schemas
     bdi.commitMessageSchema(&Ping::schema());
     bdi.commitMessageSchema(&Pong::schema());
     bdi.commitMessageSchema(&PingPongBeliefSet::schema());
+    bdi.commitMessageSchema(&AgentPlanSwitch::schema());
+    bdi.commitMessageSchema(&DummyFlag::schema());
 }
 
 static void initActions([[ maybe_unused ]] aos::jack::Engine& bdi)
@@ -167,6 +199,8 @@ void tests::initSimModel(aos::sim::SimulationBase* sim)
     sim->addJsonComponentCreator(Ping::MODEL_NAME, Ping::JsonConfig::parseJson);
     sim->addJsonComponentCreator(Pong::MODEL_NAME, Pong::JsonConfig::parseJson);
     sim->addJsonComponentCreator(PingPongBeliefSet::MODEL_NAME, PingPongBeliefSet::JsonConfig::parseJson);
+    sim->addJsonComponentCreator(AgentPlanSwitch::MODEL_NAME, AgentPlanSwitch::JsonConfig::parseJson);
+    sim->addJsonComponentCreator(DummyFlag::MODEL_NAME, DummyFlag::JsonConfig::parseJson);
 }
 
 bool tests::addComponentToEntity(aos::jack::Engine& engine, aos::sim::EntityWrapper entity, std::string_view componentName, const aos::sim::JsonParsedComponent *config)

@@ -25,6 +25,8 @@ set(JACK_MAKE_GENERATED_HEADERS_TESTS
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pingmeta.h
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pongmeta.h
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pingpongbeliefsetmeta.h
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/agentplanswitchmeta.h
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/dummyflagmeta.h
 
     # Agents
 
@@ -48,6 +50,8 @@ set(JACK_MAKE_GENERATED_SOURCES_TESTS
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pingmeta.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pongmeta.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/pingpongbeliefsetmeta.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/agentplanswitchmeta.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/dummyflagmeta.cpp
 
     # Agents
 
