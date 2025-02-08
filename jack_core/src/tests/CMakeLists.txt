@@ -57,7 +57,7 @@ macro(AddUnitTest unitTestName)
 endmacro()
 
 # Add the unit tests
-#AddUnitTest(agents agents.cpp)
+AddUnitTest(agents agents.cpp)
 #AddUnitTest(allocators allocator.cpp)
 #AddUnitTest(resources resources.cpp)
 #AddUnitTest(goals goals.cpp)
