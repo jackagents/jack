@@ -27,5 +27,21 @@ inline jack::Engine::PollResult enginePollAndRecordSchedules(
     return result;
 }
 
+inline jack::Engine::PollResult enginePollUntilDone(
+    jack::Engine&             bdi,
+    std::chrono::milliseconds pollDuration = jack::Engine::POLL_AUTO_DELTA_TIME)
+{
+    jack::Engine::PollResult result = {};
+    for (;;) {
+        result = bdi.poll(pollDuration);
+        if (result.agentsRunning <= 0 && result.agentsExecuting <= 0) {
+            break;
+        }
+    }
+
+    return result;
+}
+
+
 }; /// namespace aos
 
