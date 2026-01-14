@@ -59,9 +59,6 @@ std::string Action::toString() const
  ******************************************************************************/
 Engine::Engine(const std::string& name)
     : m_name(name)
-#if defined(JACK_SHARED_MEMORY_DEBUGGING)
-    , m_shared(true)
-#endif
 {
     reset();
 

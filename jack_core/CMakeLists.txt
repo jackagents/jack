@@ -91,7 +91,6 @@ else()
 endif()
 
 option(JACK_ALLOCATION_TRACKING "Enable call-site tracking of allocations" OFF)
-option(JACK_SHARED_MEMORY_DEBUGGING "(Linux only) Enable JACK dumping engine data to shared memory" OFF)
 option(JACK_SLOW_DEBUG_CHECKS "Enable slow verification checks of the engine state throughout the code base. Use this to vet the engine in applications" ${JACK_IS_DEBUG_BUILD})
 option(JACK_WITH_ASAN "Enable address sanitizer, this must be used with debug build" OFF)
 option(JACK_WITH_CYCLONE_DDS "Enable CycloneDDS (bus distribution) support in the engine" OFF)

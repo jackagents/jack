@@ -35,7 +35,6 @@ set(JACK_SOURCES
     #jack/dds-adapter/rti/rtiddsadapter.h
     jack/engine/intentionexecutor.cpp
     jack/engine/uuid.cpp
-    jack/engine/shared.cpp
     jack/engine/dispatch.cpp
     jack/events/actionevent.cpp
     jack/tactic.cpp
@@ -75,7 +74,6 @@ set(JACK_HEADERS
     jack/engine.h
     jack/engine/dispatch.h
     jack/engine/intentionexecutor.h
-    jack/engine/shared.h
     jack/engine/uuid.h
     jack/events/actioncompleteevent.h
     jack/events/actionevent.h
@@ -269,15 +267,10 @@ endif()
 ################################################################################
 # Compile Options
 ################################################################################
-option(JACK_SHARED_MEMORY_DEBUGGING "Enable JACK dumping engine data to shared memory" OFF)
 option(JACK_ALLOCATION_TRACKING "Enable call-site tracking of allocations" OFF)
 
 target_compile_options(jack_core PRIVATE -Wall -Wextra -pedantic -Werror)
 set_source_files_properties(jack/lex.yy.c PROPERTIES COMPILE_FLAGS -Wno-all) # switch off all warning for the lex file
-
-if (JACK_SHARED_MEMORY_DEBUGGING)
-    target_compile_definitions(jack_core PRIVATE -D JACK_SHARED_MEMORY_DEBUGGING)
-endif()
 
 if (JACK_SLOW_DEBUG_CHECKS)
     target_compile_definitions(jack_core PRIVATE -D JACK_SLOW_DEBUG_CHECK_BUILD_FLAG)
