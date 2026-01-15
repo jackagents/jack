@@ -728,11 +728,6 @@ private:
     /// The timestamp of the last protocol event that was sent. This is used for debugging to track.
     std::chrono::microseconds m_lastProtocolTimestampUs = {};
 
-#if defined(JACK_SHARED_MEMORY_DEBUGGING)
-    // the shared memory model for this engine
-    shared::SharedMemoryModel m_shared;
-#endif
-
     /// \todo This is a work-around for the simulator. When the simulator starts
     /// up and loads a scenario, it ticks the scenario exactly once to process
     /// all the events that are queued to be executed at time = 0.

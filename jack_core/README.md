@@ -60,10 +60,6 @@ Some useful options for building JACK are listed below.
 
     Upon exit, JACK will dump all of the active allocations, and their locations, that have not been released.
 
-- `JACK_SHARED_MEMORY_DEBUGGING (default OFF)`
-
-    (Linux only) Enable JACK dumping engine data to shared memory.
-
 - `JACK_SLOW_DEBUG_CHECKS (default OFF, in debug ON)`
 
     Enable slow verification checks of the engine state throughout the code base.
