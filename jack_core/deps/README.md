@@ -45,9 +45,7 @@ rti needs to be installed as a dependency
 git subtree add --prefix src/jack/jack_core/deps/tracy git@gitlab.aosgrp.net:aos/3rd/tracy.git v0.9.1 --squash
 
 ## uwebsockets
-git subtree add --prefix src/jack/jack_core/deps/uwebsockets git@gitlab.aosgrp.net:aos/3rd/uwebsockets_20_35_0.git feature/mw/fix_includes --squash
-
-TODO apply other setting from the original CMakeLists.txt
+Used to send explainability info to the client
 
 ## zlib
 probably broken the windows build 
