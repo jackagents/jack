@@ -1570,7 +1570,7 @@ void Engine::eventDispatch(Event* event)
                 ZoneNamedN(debugTracyEngineRegister, "Engine message event", true);
 
                 auto* msgEvent = static_cast<MessageEvent*>(event);
-                ZoneNameV(debugTracyEngineRegister, msgEvent->msg.m_schemaName.c_str(), msgEvent->msg.m_schemaName.size());
+                ZoneNameV(debugTracyEngineRegister, msgEvent->msg->schema().c_str(), msgEvent->msg->schema().size());
 
                 JACK_ASSERT_MSG(!msgEvent->recipient, "Event with recipient should be handled earlier by direct routing");
                 for (Agent* agent : m_agents) {

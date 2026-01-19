@@ -481,7 +481,7 @@ void Service::eventDispatch(Event *event)
         case Event::MESSAGE: {
             ZoneNamedN(debugTracyServiceMessage, "Service message event", true);
             [[maybe_unused]] const MessageEvent* msgEvent = static_cast<MessageEvent*>(event);
-            ZoneNameV(debugTracyServiceMessage, msgEvent->msg.m_schemaName.data(), msgEvent->msg.m_schemaName.size());
+            ZoneNameV(debugTracyServiceMessage, msgEvent->msg->schema().data(), msgEvent->msg->schema().size());
 
             m_engine.routeEvent(event);
             returnEventToAllocator = false;
