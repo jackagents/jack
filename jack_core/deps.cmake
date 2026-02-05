@@ -34,11 +34,6 @@ if (JACK_WITH_STACKTRACE)
 endif()
 
 if (JACK_WITH_CYCLONE_DDS)
-    if (NOT WIN32)
-        # CycloneDDS does not support binding to Iceoryx for Windows yet
-        add_subdirectory(deps/cpptoml)
-        add_subdirectory(deps/iceoryx)
-    endif()
     add_subdirectory(deps/cyclonedds)
 endif()
 

@@ -94,7 +94,6 @@ set(CPACK_COMPONENTS_ALL
     uSockets_boringssl
     libuv
     Flatbuffers
-    cpptoml
     cyclonedds
     iceoryx
     devel
