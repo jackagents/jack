@@ -69,10 +69,6 @@ Some useful options for building JACK are listed below.
 
     Enable address sanitizer, this must be used with a debugged build.
 
-- `JACK_WITH_CYCLONE_DDS (default OFF)`
-
-    Enable CycloneDDS (bus distribution) support in the engine
-
 - `JACK_WITH_RTI_DDS (default OFF)`
 
     Enable DDS (bus distribution) support in the engine.
@@ -239,10 +235,10 @@ cmake --build build/arm64-gnu --parallel --verbose --config Debug
 #### DDS
 
 Integration tests are available for JACK utilising a DDS bus, which can be
-enabled by setting `JACK_WITH_RTI_DDS=ON` or `JACK_WITH_CYCLONE_DDS=ON`. These
+enabled by setting `JACK_WITH_RTI_DDS=ON`. These
 tests currently work with both Windows and Linux. DDS is an alternative protocol
 and backend for distribution and we support multiple implementations, such as
-RTI and Cyclone.
+RTI.
 
 RTI-DDS requires a license file to be set up in the environment variable
 `RTI_LICENSE_FILE`. For more options, please refer to the dds-adapter readme

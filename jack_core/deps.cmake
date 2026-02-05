@@ -33,10 +33,6 @@ if (JACK_WITH_STACKTRACE)
     add_subdirectory(deps/cpptrace)
 endif()
 
-if (JACK_WITH_CYCLONE_DDS)
-    add_subdirectory(deps/cyclonedds)
-endif()
-
 if (JACK_WITH_RTI_DDS)
     #Using include for scoping reasons
     include(deps/rti/rti.cmake)

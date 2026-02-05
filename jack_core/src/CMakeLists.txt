@@ -27,9 +27,6 @@ set(JACK_SOURCES
     jack/builders/resourcebuilder.cpp
     jack/builders/rolebuilder.cpp
     jack/builders/servicebuilder.cpp
-    #See jack-cyc-dds-adapter
-    #jack/dds-adapter/cyclone/cycddsadapter.cpp
-    #jack/dds-adapter/cyclone/cycddsadapter.h
     #See jack-rti-dds-adapter
     #jack/dds-adapter/rti/rtiddsadapter.cpp
     #jack/dds-adapter/rti/rtiddsadapter.h
@@ -225,11 +222,6 @@ add_library(jack_core::jack-event-protocol ALIAS jack-event-protocol)
 
 if (JACK_WITH_RTI_DDS)
     include(dds-adapter-rti.cmake)
-endif()
-
-if (JACK_WITH_CYCLONE_DDS)
-    # TODO: Doesn't build correctly
-    # include(dds-adapter-cyclone.cmake)
 endif()
 
 if (JACK_WITH_JSON_ADAPTER)

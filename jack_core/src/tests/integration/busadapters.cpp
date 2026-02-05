@@ -4,7 +4,7 @@
 #include "jack/event-protocol/protocol.h"
 
 /// Adapters
-#if defined(JACK_WITH_RTI_DDS) || defined(JACK_WITH_CYCLONE_DDS)
+#if defined(JACK_WITH_RTI_DDS)
     #if defined(_WIN32)
         /// \note MinGW GCC defines NOMINMAX
         #if !defined(NOMINMAX)
@@ -17,8 +17,6 @@
 
     #if defined(JACK_WITH_RTI_DDS)
         #include "jack/dds-adapter/rti/rtiddsadapter.h"
-    #elif defined(JACK_WITH_CYCLONE_DDS)
-        #include "jack/dds-adapter/cyclone/cycddsadapter.h"
     #endif
 
     #if defined(_WIN32)
@@ -39,13 +37,11 @@ enum Bus
 {
     #if defined(JACK_WITH_RTI_DDS)
     Bus_DDS,
-    #elif defined(JACK_WITH_CYCLONE_DDS)
-    Bus_CYC_DDS,
     #endif
     Bus_COUNT,
 };
 
-#if defined(JACK_WITH_RTI_DDS) || defined(JACK_WITH_CYCLONE_DDS)
+#if defined(JACK_WITH_RTI_DDS)
 static int32_t nextDDSDomainId()
 {
     static int32_t ddsDomainId = 0;;
@@ -75,14 +71,6 @@ struct BusAdapterFixture : public testing::Test
                 m_adapterB = std::unique_ptr<RTIDDSAdapter>(new RTIDDSAdapter(DDS_DOMAIN_ID));
                 JACK_INFO("Init RTI DDS Adapter...DONE");
             } break;
-            #elif defined(JACK_WITH_CYCLONE_DDS)
-            case Bus_CYC_DDS: {
-                JACK_INFO("Init CYC DDS Adapter...");
-                const int32_t DDS_DOMAIN_ID = nextDDSDomainId();
-                m_adapterA = std::unique_ptr<CycDDSAdapter>(new CycDDSAdapter(DDS_DOMAIN_ID));
-                m_adapterB = std::unique_ptr<CycDDSAdapter>(new CycDDSAdapter(DDS_DOMAIN_ID));
-                JACK_INFO("Init CYC DDS Adapter...DONE");
-            } break;
             #endif
 
             case Bus_COUNT: { assert(!"Invalid Code Path"); } break;
@@ -91,7 +79,7 @@ struct BusAdapterFixture : public testing::Test
         m_engineA.addMessageAdapter(m_adapterA.get());
         m_engineB.addMessageAdapter(m_adapterB.get());
 
-        #if defined(JACK_WITH_RTI_DDS) || defined(JACK_WITH_CYCLONE_DDS)
+        #if defined(JACK_WITH_RTI_DDS)
         /// \todo Temporary work-around, DDS requires sometime for the adapters
         /// to find each other. There's a subscription matched callback that we
         /// can use to delay the usage of an adapter until we connect with
@@ -1132,10 +1120,6 @@ int main(int argc, char **argv)
             #if defined(JACK_WITH_RTI_DDS)
             case Bus_DDS: {
                 testSuffix = "RTI_DDS";
-            } break;
-            #elif defined(JACK_WITH_CYCLONE_DDS)
-            case Bus_CYC_DDS: {
-                testSuffix = "CYC_DDS";
             } break;
             #endif
             case Bus_COUNT: { assert(!"Invalid Code Path"); } break;

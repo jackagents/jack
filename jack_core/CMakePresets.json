@@ -12,7 +12,6 @@
                 "JACK_ALLOCATION_TRACKING":        true,
                 "JACK_SLOW_DEBUG_CHECKS":          true,
                 "JACK_WITH_ASAN":                  true,
-                "JACK_WITH_CYCLONE_DDS":           false,
                 "JACK_WITH_JSON_ADAPTER":          false,
                 "JACK_WITH_RTI_DDS":               false,
                 "JACK_WITH_TRACY":                 false,
@@ -29,7 +28,6 @@
             "cacheVariables": {
                 "JACK_WITH_RTI_DDS":      false,
                 "JACK_WITH_WEBSOCKETS":   true,
-                "JACK_WITH_CYCLONE_DDS":  false,
                 "JACK_WITH_JSON_ADAPTER": true
             }
         },
