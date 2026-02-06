@@ -107,17 +107,3 @@ if (JACK_WITH_RTI_DDS)
     add_test(busadapters_rtidds busadapters_rtidds)
 endif()
 
-if (JACK_WITH_CYCLONE_DDS)
-    add_executable(busadapters_cyclonedds
-        integration/busadapters.cpp)
-
-    target_link_libraries(busadapters_cyclonedds
-        PUBLIC
-        jack-cyclone-dds-adapter
-        jack_core
-        gtest
-        gtest_main)
-
-    add_test(busadapters_cyclonedds busadapters_cyclonedds)
-endif()
-

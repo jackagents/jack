@@ -33,15 +33,6 @@ if (JACK_WITH_STACKTRACE)
     add_subdirectory(deps/cpptrace)
 endif()
 
-if (JACK_WITH_CYCLONE_DDS)
-    if (NOT WIN32)
-        # CycloneDDS does not support binding to Iceoryx for Windows yet
-        add_subdirectory(deps/cpptoml)
-        add_subdirectory(deps/iceoryx)
-    endif()
-    add_subdirectory(deps/cyclonedds)
-endif()
-
 if (JACK_WITH_RTI_DDS)
     #Using include for scoping reasons
     include(deps/rti/rti.cmake)
