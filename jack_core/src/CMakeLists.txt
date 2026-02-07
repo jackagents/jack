@@ -196,7 +196,7 @@ target_include_directories(jack-event-protocol PUBLIC
 )
 
 target_link_libraries(jack-event-protocol PUBLIC
-    concurrentqueue
+    concurrentqueue::concurrentqueue
     TracyClient
     nlohmann_json::nlohmann_json
     PRIVATE

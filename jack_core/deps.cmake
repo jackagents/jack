@@ -17,9 +17,6 @@ endif()
 
 include(FetchContent)
 add_subdirectory(deps/googletest)
-add_subdirectory(deps/concurrentqueue)
-add_subdirectory(deps/fmt)
-add_subdirectory(deps/date)
 add_subdirectory(deps/nlohmann)
 install(TARGETS nlohmann_json
     EXPORT ${PROJECT_NAME}_Targets
@@ -28,6 +25,8 @@ install(TARGETS nlohmann_json
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+find_package(fmt)
+find_package(concurrentqueue)
 
 if (JACK_WITH_STACKTRACE)
     add_subdirectory(deps/cpptrace)
