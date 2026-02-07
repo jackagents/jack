@@ -16,7 +16,7 @@ if(DEFINED ENV{CI_SERVER_TLS_CA_FILE})
 endif()
 
 include(FetchContent)
-add_subdirectory(deps/googletest)
+find_package(GTest REQUIRED)
 add_subdirectory(deps/nlohmann)
 install(TARGETS nlohmann_json
     EXPORT ${PROJECT_NAME}_Targets

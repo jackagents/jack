@@ -35,8 +35,8 @@ macro(AddUnitTest unitTestName)
   target_link_libraries(${unitTestName} PUBLIC
       jack_core
       fmt::fmt-header-only
-      gtest
-      gtest_main)
+      GTest::gtest
+      GTest::gtest_main)
     target_include_directories(${unitTestName} PUBLIC
         ${JACK_MAKE_GENERATED_INCLUDE_DIRS_TESTS}
     )
@@ -101,8 +101,8 @@ if (JACK_WITH_RTI_DDS)
         jack-rti-dds-adapter
         jack-event-protocol
         jack_core
-        gtest
-        gtest_main)
+        GTest::gtest
+        GTest::gtest_main)
 
     add_test(busadapters_rtidds busadapters_rtidds)
 endif()

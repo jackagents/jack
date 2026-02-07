@@ -1,4 +1,3 @@
-set(SHA1_googletest origin/main)
 set(SHA1_flatbuffers v23.1.21)
 set(SHA1_concurrentqueue origin/master)
 set(SHA1_uwebsockets jack_1)
