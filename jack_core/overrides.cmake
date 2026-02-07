@@ -1,4 +1,1 @@
-set(SHA1_cyclonedds origin/maint/aos/0.10.3)
-set(SHA1_cyclonedds_cxx origin/maint/aos/0.10.3)
 set(SHA1_flatbuffers origin/feature/mw/jack_install)
-set(SHA1_concurrentqueue origin/feature/mw/fix_includes)

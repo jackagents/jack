@@ -60,7 +60,6 @@ target_compile_definitions(jack-websocket-adapter PUBLIC
 target_link_libraries(jack-websocket-adapter
     PRIVATE
         # jack-msgs
-        # flatbuffers
         uWebSockets::uWebSockets
         fmt::fmt-header-only
     PUBLIC
