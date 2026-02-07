@@ -282,11 +282,3 @@ if (JACK_ALLOCATION_TRACKING)
         target_compile_definitions(jack-websocket-adapter PUBLIC -D JACK_ALLOCATION_TRACKING)
     endif()
 endif()
-
-# TODO: Only enable stack trace in debug builds, or, we switch to dumping raw
-# frame traces in release that customers can send to us and we resolve in our
-# internal debug builds.
-if (JACK_WITH_STACKTRACE)
-    target_compile_definitions(jack_core PUBLIC JACK_WITH_STACKTRACE)
-    target_link_libraries(jack_core PUBLIC cpptrace)
-endif()

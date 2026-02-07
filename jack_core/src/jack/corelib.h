@@ -54,13 +54,6 @@ enum class Severity : uint8_t
 
 namespace aos::jack
 {
-#if !defined(JACK_DUMP_STACK_TRACE)
-    #if defined(JACK_WITH_STACK_TRACE)
-    #define JACK_DUMP_STACK_TRACE cpptrace::print()
-    #else
-    #define JACK_DUMP_STACK_TRACE
-    #endif
-#endif
 
 /// Preprocessor token pasting work-around macro
 #define JACK_STRINGIFY2(token) #token
@@ -76,7 +69,6 @@ namespace aos::jack
                 aos::jack::ThreadScratchAllocator scratch_ = aos::jack::getThreadScratchAllocator(nullptr);                                                     \
                 std::string_view log                       = aos::jack::fmtAllocInternal(scratch_.arena, FMT_STRING(fmt), __VA_ARGS__);                         \
                 JACK_CRITICAL("Assertion triggered: expression was '" #expr "' [file='" __FILE__ ":" JACK_STRINGIFY(__LINE__) "']\n{}", log.size() ? log : ""); \
-                JACK_DUMP_STACK_TRACE;                                                                                                                          \
                 JACK_DEBUG_BREAK;                                                                                                                               \
             }                                                                                                                                                   \
         } while (0)
