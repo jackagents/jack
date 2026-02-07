@@ -202,9 +202,6 @@ target_link_libraries(jack-event-protocol PUBLIC
     PRIVATE
         fmt::fmt-header-only
 )
-target_include_directories(jack-event-protocol PUBLIC
-    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
-)
 
 install(TARGETS jack-event-protocol
     EXPORT ${PROJECT_NAME}_Targets

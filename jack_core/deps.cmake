@@ -17,13 +17,7 @@ endif()
 
 include(FetchContent)
 find_package(GTest REQUIRED)
-add_subdirectory(deps/nlohmann)
-install(TARGETS nlohmann_json
-    EXPORT ${PROJECT_NAME}_Targets
-    COMPONENT jack_core_RunTime
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+find_package(nlohmann_json REQUIRED)
 
 find_package(fmt)
 find_package(concurrentqueue)
