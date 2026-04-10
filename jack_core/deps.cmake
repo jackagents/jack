@@ -22,10 +22,6 @@ find_package(nlohmann_json REQUIRED)
 find_package(fmt)
 find_package(concurrentqueue)
 
-if (JACK_WITH_STACKTRACE)
-    add_subdirectory(deps/cpptrace)
-endif()
-
 if (JACK_WITH_RTI_DDS)
     #Using include for scoping reasons
     include(deps/rti/rti.cmake)
