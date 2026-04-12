@@ -3,6 +3,7 @@
     "fmt",
     "concurrentqueue",
     "gtest",
-    "nlohmann-json"
+    "nlohmann-json",
+    "uwebsockets"
   ]
 }

@@ -28,16 +28,7 @@ if (JACK_WITH_RTI_DDS)
 endif()
 
 if (JACK_WITH_WEBSOCKETS)
-
-    # configure uwebsockets
-    OPTION(LSQUIC_BIN "Compile example binaries that use the library" OFF)
-    OPTION(LSQUIC_TESTS "Compile library unit tests" OFF)
-    OPTION(LSQUIC_SHARED_LIB "Compile as shared librarry" OFF)
-    OPTION(LSQUIC_DEVEL "Compile in development mode" OFF)
-
-    # add_subdirectory(deps/zlib)
-    # add_subdirectory(deps/libuv)
-    add_subdirectory(deps/uwebsockets)
+    find_package(unofficial-uwebsockets CONFIG REQUIRED)
 endif()
 
 add_subdirectory(deps/tracy)

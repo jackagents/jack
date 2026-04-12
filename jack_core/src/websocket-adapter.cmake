@@ -60,7 +60,7 @@ target_compile_definitions(jack-websocket-adapter PUBLIC
 target_link_libraries(jack-websocket-adapter
     PRIVATE
         # jack-msgs
-        uWebSockets::uWebSockets
+        unofficial::uwebsockets::uwebsockets
         fmt::fmt-header-only
     PUBLIC
         jack-event-protocol

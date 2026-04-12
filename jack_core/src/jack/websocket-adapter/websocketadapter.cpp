@@ -6,7 +6,7 @@
 #include <jack/corelib.h>
 
 /// Third Party
-#include <App.h> /// uWebSockets
+#include <uwebsockets/App.h> /// uWebSockets
 #include <thread>
 #include <string_view>
 #include <tracy/Tracy.hpp>
