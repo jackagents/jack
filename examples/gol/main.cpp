@@ -24,6 +24,7 @@ int main(int /*argc*/, char **/*argv*/)
 
     // Create and connect WebSocket adapter for monitoring
     aos::WebSocketAdapter wsAdapter(8080);
+    wsAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT); /// Set to TEXT mode for debugging
     if (wsAdapter.connect()) {
         std::cout << "WebSocket adapter connected on port 8080" << std::endl;
         bdi.addBusAdapter(&wsAdapter);
