@@ -158,7 +158,7 @@ target_link_libraries(jack_core
     PUBLIC
         jack_core-version
         jack-event-protocol
-        TracyClient
+        Tracy::TracyClient
         fmt::fmt-header-only
 )
 
@@ -197,7 +197,7 @@ target_include_directories(jack-event-protocol PUBLIC
 
 target_link_libraries(jack-event-protocol PUBLIC
     concurrentqueue::concurrentqueue
-    TracyClient
+    Tracy::TracyClient
     nlohmann_json::nlohmann_json
     PRIVATE
         fmt::fmt-header-only

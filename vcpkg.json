@@ -4,6 +4,7 @@
     "concurrentqueue",
     "gtest",
     "nlohmann-json",
-    "uwebsockets"
+    "uwebsockets",
+    "tracy"
   ]
 }

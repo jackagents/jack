@@ -21,6 +21,7 @@ find_package(nlohmann_json REQUIRED)
 
 find_package(fmt)
 find_package(concurrentqueue)
+find_package(Tracy CONFIG REQUIRED)
 
 if (JACK_WITH_RTI_DDS)
     #Using include for scoping reasons
