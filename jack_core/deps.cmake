@@ -21,6 +21,10 @@ find_package(nlohmann_json REQUIRED)
 
 find_package(fmt)
 find_package(concurrentqueue)
+
+# Tracy options - moved from deps/tracy/CMakeLists.txt
+option(TRACY_ENABLE "Enable profiling with Tracy" ${JACK_WITH_TRACY})
+option(TRACY_ONLY_LOCALHOST "Enable discovery of Tracy clients exclusively via localhost" ${JACK_WITH_TRACY})
 find_package(Tracy CONFIG REQUIRED)
 
 if (JACK_WITH_RTI_DDS)
@@ -31,5 +35,3 @@ endif()
 if (JACK_WITH_WEBSOCKETS)
     find_package(unofficial-uwebsockets CONFIG REQUIRED)
 endif()
-
-add_subdirectory(deps/tracy)
