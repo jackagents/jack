@@ -1964,9 +1964,7 @@ GoalPursue Agent::pursueSub(std::string_view         goal,
     /// So we lock the API whilst we modify the event after it has been
     /// dispatched.
     ///
-    /// I attempted to fix this here
-    ///
-    /// https://gitlab.aosgrp.net/jack/core/jack-core/-/commit/e479d2ad9eeb285f692eef672efbb5db5cde56e3
+    /// attempted fix previously
     ///
     /// However, we have plan tasks that generate an event, uses the promise
     /// from the API and holds a pointer to the plan task itself. Then JACK

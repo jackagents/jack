@@ -1,10 +1,3 @@
-#if(PROJECT_IS_TOP_LEVEL)
-    include(baseline.cmake)
-    include(overrides.cmake)
-#endif()
-
-set(GIT_HOST "git@gitlab.aosgrp.net:"
-    CACHE STRING "Git host prefix")
 
 if(DEFINED ENV{CI_JOB_TOKEN})
     list(APPEND git_config url.$ENV{CI_SERVER_PROTOCOL}://gitlab-ci-token:$ENV{CI_JOB_TOKEN}@$ENV{CI_SERVER_HOST}:$ENV{CI_SERVER_PORT}/.insteadOf=git@$ENV{CI_SERVER_HOST}:)
@@ -22,7 +15,6 @@ find_package(nlohmann_json REQUIRED)
 find_package(fmt)
 find_package(concurrentqueue)
 
-# Tracy options - moved from deps/tracy/CMakeLists.txt
 option(TRACY_ENABLE "Enable profiling with Tracy" ${JACK_WITH_TRACY})
 option(TRACY_ONLY_LOCALHOST "Enable discovery of Tracy clients exclusively via localhost" ${JACK_WITH_TRACY})
 find_package(Tracy CONFIG REQUIRED)

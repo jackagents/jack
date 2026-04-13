@@ -248,7 +248,6 @@ export default class WebSocketObj {
 
     this._ws.connect(this._address);
 
-    // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
     // if (this.wsWorker) {
     //   this.wsWorker.terminate();
     //   this.wsWorker = null;
@@ -373,7 +372,6 @@ export default class WebSocketObj {
    * Stop connection
    */
   stop() {
-    // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
     // if (this.wsWorker) {
     //   this.wsWorker.terminate();
     // }
@@ -442,7 +440,6 @@ export default class WebSocketObj {
     return this._wsStatus;
   }
 
-  // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
   /**
    * Request data from ws thread
    */
