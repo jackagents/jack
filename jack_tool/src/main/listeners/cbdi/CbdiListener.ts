@@ -374,7 +374,6 @@ export default class CbdiListener extends BaseListener {
 
     playbackManager.pause();
 
-    // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
     // Get event data from ws thread
     // The mainthread will wait for data callback to proceed
     // this.websocketObj?.getDataFromWsThread(playbackManager.previousRecordIndex());
@@ -496,7 +495,6 @@ export default class CbdiListener extends BaseListener {
     ipcMain.addListener(eventListeners.cbdi.nodeInfo, this.onRequestNodeInfo.bind(this));
     ipcMain.addListener(eventListeners.cbdi.inspectedPlanIntentionChanged, this.onInspectingPlanIntentionChanged.bind(this));
     ipcMain.addListener(eventListeners.playback.commandFrontendPausePlayback, this.onCommandFrontendPausePlayback.bind(this));
-    // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
     // ipcMain.addListener('get-event-data-from-ws-thread', this.onGetEventDataFromWsThread.bind(this));
 
     /* -------------------------------- Playback -------------------------------- */
@@ -545,7 +543,6 @@ export default class CbdiListener extends BaseListener {
     ipcMain.removeHandler(request.cbdi.discoverModels);
     ipcMain.removeHandler(request.cbdi.getIntentionByAgentGoalId);
     ipcMain.removeHandler(request.cbdi.inspectPlanGoalIdChanged);
-    // https://gitlab.aosgrp.net/applications/aewcf/-/issues/975
     // ipcMain.removeHandler('get-event-data-from-ws-thread');
 
     /* --------------------------- Event listener -------------------------- */

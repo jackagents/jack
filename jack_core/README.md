@@ -300,7 +300,7 @@ The following lines of code will install all the dependencies required to build
 the Tracy client for profiling on Linux.
 
 ```bash
-git clone git@gitlab.aosgrp.net:aos/3rd/tracy.git && \
+git clone https://github.com/wolfpld/tracy && \
 git clone https://github.com/capstone-engine/capstone.git && \
 cd capstone && ./make.sh && sudo ./make.sh install && cd .. && \
 sudo apt install -y gnome-session-wayland && \

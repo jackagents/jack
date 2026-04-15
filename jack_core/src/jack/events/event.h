@@ -8,9 +8,6 @@
 
 /// Third Party
 #include <memory>
-#if defined(JACK_WITH_STACKTRACE)
-#include <cpptrace/cpptrace.hpp>
-#endif
 
 namespace aos::jack
 {

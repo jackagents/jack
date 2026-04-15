@@ -8,7 +8,7 @@
 #pragma warning(disable: 4127) // event-protocol\src\concurrentqueue.h|788| warning C4127: conditional expression is constant
 #endif /// _MSC_VER
 
-#include <concurrentqueue.h>
+#include <moodycamel/concurrentqueue.h>
 
 #if defined(_MSC_VER)
 #pragma warning(pop)

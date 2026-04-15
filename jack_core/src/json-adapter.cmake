@@ -24,9 +24,6 @@ target_link_libraries(jack-json-adapter
     PRIVATE
         fmt::fmt-header-only
 )
-target_include_directories(jack-json-adapter PUBLIC
-    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
-)
 
 install(TARGETS jack-json-adapter
     EXPORT ${PROJECT_NAME}_Targets

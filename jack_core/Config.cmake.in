@@ -4,11 +4,9 @@ list(APPEND CMAKE_PREFIX_PATH "${PACKAGE_PREFIX_DIR}")
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(concurrentqueue)
 find_dependency(ZLIB)
 find_dependency(uWebSockets)
 find_dependency(Tracy)
-find_dependency(fmt)
 
 
 # @note This is required for Tracy?

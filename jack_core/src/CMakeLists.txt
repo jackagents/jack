@@ -158,7 +158,7 @@ target_link_libraries(jack_core
     PUBLIC
         jack_core-version
         jack-event-protocol
-        TracyClient
+        Tracy::TracyClient
         fmt::fmt-header-only
 )
 
@@ -196,14 +196,11 @@ target_include_directories(jack-event-protocol PUBLIC
 )
 
 target_link_libraries(jack-event-protocol PUBLIC
-    concurrentqueue
-    TracyClient
+    concurrentqueue::concurrentqueue
+    Tracy::TracyClient
     nlohmann_json::nlohmann_json
     PRIVATE
         fmt::fmt-header-only
-)
-target_include_directories(jack-event-protocol PUBLIC
-    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
 )
 
 install(TARGETS jack-event-protocol
@@ -281,12 +278,4 @@ if (JACK_ALLOCATION_TRACKING)
     if (JACK_WITH_WEBSOCKETS)
         target_compile_definitions(jack-websocket-adapter PUBLIC -D JACK_ALLOCATION_TRACKING)
     endif()
-endif()
-
-# TODO: Only enable stack trace in debug builds, or, we switch to dumping raw
-# frame traces in release that customers can send to us and we resolve in our
-# internal debug builds.
-if (JACK_WITH_STACKTRACE)
-    target_compile_definitions(jack_core PUBLIC JACK_WITH_STACKTRACE)
-    target_link_libraries(jack_core PUBLIC cpptrace)
 endif()

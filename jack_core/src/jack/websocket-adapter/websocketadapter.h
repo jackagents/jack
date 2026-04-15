@@ -13,6 +13,12 @@ namespace aos::jack::protocol { struct Event; }
 
 namespace aos
 {
+enum class WebSocketOutputMode : uint8_t
+{
+    BINARY, /// BSON binary format (default)
+    TEXT,   /// JSON text format for debugging
+};
+
 class WebSocketAdapter : public jack::BusAdapter
 {
     /**************************************************************************
@@ -20,6 +26,9 @@ class WebSocketAdapter : public jack::BusAdapter
      **************************************************************************/
 public:
     WebSocketAdapter(uint16_t port = 8080);
+
+    /// Set the output mode for WebSocket messages (binary BSON or text JSON)
+    void setOutputMode(WebSocketOutputMode mode);
 
     ~WebSocketAdapter();
 

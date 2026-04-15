@@ -67,7 +67,7 @@ function EditableTextWithoutButton({ value, onChangeValue, isEditing, setIsEditi
         <span style={{ width: '100%' }}>
           {/* // Display the original value not the edited text, 
           so that when it fails to update, it will be reverted. 
-          https://gitlab.aosgrp.net/applications/aewcf/-/issues/1002 */}
+          */}
           {value}
         </span>
       )}

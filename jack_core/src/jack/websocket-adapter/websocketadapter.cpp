@@ -6,7 +6,7 @@
 #include <jack/corelib.h>
 
 /// Third Party
-#include <App.h> /// uWebSockets
+#include <uwebsockets/App.h> /// uWebSockets
 #include <thread>
 #include <string_view>
 #include <tracy/Tracy.hpp>
@@ -47,6 +47,7 @@ struct WebSocketAdapter::WebSocketAdapterImpl
     std::thread                         thread;
     std::atomic<WebSocketConnectStatus> connectStatus                 = {};
     bool                                connectErrorLogged            = false;
+    WebSocketOutputMode                 outputMode                    = WebSocketOutputMode::BINARY;
 };
 
 WebSocketAdapter::WebSocketAdapter(uint16_t port)
@@ -60,6 +61,11 @@ WebSocketAdapter::WebSocketAdapter(uint16_t port)
 WebSocketAdapter::~WebSocketAdapter()
 {
     disconnect();
+}
+
+void WebSocketAdapter::setOutputMode(WebSocketOutputMode mode)
+{
+    m_impl->outputMode = mode;
 }
 
 static constexpr inline std::string_view BUS_TOPIC = "jack";
@@ -253,9 +259,8 @@ bool WebSocketAdapter::sendEvent(const jack::protocol::Event *event)
         /// \note Record for performance metrics
         size_t capacityBefore = m_impl->uwsMessageBuffer.capacity();
 
-        /// \note Serialise and publish the message
-        static constexpr bool DEBUG_SEND_JSON = false;
-        if (DEBUG_SEND_JSON) {
+        /// \note Serialise and publish the message based on the configured output mode
+        if (m_impl->outputMode == WebSocketOutputMode::TEXT) {
             std::string buffer = json.dump();
             m_impl->uws->publish(BUS_TOPIC, buffer, uWS::OpCode::TEXT);
 

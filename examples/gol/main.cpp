@@ -9,6 +9,8 @@
 #include <gol/impl/services/gameoflifeserviceimpl.h>
 #include <gol/impl/agents/gameoflifeagentimpl.h>
 
+#include <jack/websocket-adapter/websocketadapter.h>
+
 #include <iostream>
 
 int main(int /*argc*/, char **/*argv*/)
@@ -19,6 +21,16 @@ int main(int /*argc*/, char **/*argv*/)
     * 1) Create the agents for each cell
     */
     gol bdi; /// Initializing the bdi application
+
+    // Create and connect WebSocket adapter for monitoring
+    aos::WebSocketAdapter wsAdapter(8080);
+    wsAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT); /// Set to TEXT mode for debugging
+    if (wsAdapter.connect()) {
+        std::cout << "WebSocket adapter connected on port 8080" << std::endl;
+        bdi.addBusAdapter(&wsAdapter);
+    } else {
+        std::cout << "Failed to connect WebSocket adapter" << std::endl;
+    }
 
     // Setup a simepl gridworld rendering
     aos::GridWorld world(bdi,

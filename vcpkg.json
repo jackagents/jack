@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    "fmt",
+    "concurrentqueue",
+    "gtest",
+    "nlohmann-json",
+    "uwebsockets",
+    "tracy"
+  ]
+}

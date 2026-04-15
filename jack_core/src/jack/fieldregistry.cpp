@@ -25,7 +25,82 @@ void from_json(const nlohmann::json& j, Field& f)
 {
     j.at("name").get_to(f.m_name);
     j.at("type").get_to(f.m_type);
-    j.at("value").get_to(f.m_value);
+    
+    // Handle the value based on the type string
+    const std::string& type = f.m_type;
+    const nlohmann::json& value = j.at("value");
+    
+    try {
+        if (type == "int8_t") {
+            f.m_value = value.get<int8_t>();
+        } else if (type == "int16_t") {
+            f.m_value = value.get<int16_t>();
+        } else if (type == "int32_t") {
+            f.m_value = value.get<int32_t>();
+        } else if (type == "int64_t") {
+            f.m_value = value.get<int64_t>();
+        } else if (type == "uint8_t") {
+            f.m_value = value.get<uint8_t>();
+        } else if (type == "uint16_t") {
+            f.m_value = value.get<uint16_t>();
+        } else if (type == "uint32_t") {
+            f.m_value = value.get<uint32_t>();
+        } else if (type == "uint64_t") {
+            f.m_value = value.get<uint64_t>();
+        } else if (type == "float") {
+            f.m_value = value.get<float>();
+        } else if (type == "double") {
+            f.m_value = value.get<double>();
+        } else if (type == "bool") {
+            f.m_value = value.get<bool>();
+        } else if (type == "std::string") {
+            f.m_value = value.get<std::string>();
+        } else if (type == "aos::jack::V2") {
+            aos::jack::V2 v2{};
+            v2.m_x = value.at("m_x").get<float>();
+            v2.m_y = value.at("m_y").get<float>();
+            f.m_value = v2;
+        } else if (type == "std::vector<int8_t>") {
+            f.m_value = value.get<std::vector<int8_t>>();
+        } else if (type == "std::vector<int16_t>") {
+            f.m_value = value.get<std::vector<int16_t>>();
+        } else if (type == "std::vector<int32_t>") {
+            f.m_value = value.get<std::vector<int32_t>>();
+        } else if (type == "std::vector<int64_t>") {
+            f.m_value = value.get<std::vector<int64_t>>();
+        } else if (type == "std::vector<uint8_t>") {
+            f.m_value = value.get<std::vector<uint8_t>>();
+        } else if (type == "std::vector<uint16_t>") {
+            f.m_value = value.get<std::vector<uint16_t>>();
+        } else if (type == "std::vector<uint32_t>") {
+            f.m_value = value.get<std::vector<uint32_t>>();
+        } else if (type == "std::vector<uint64_t>") {
+            f.m_value = value.get<std::vector<uint64_t>>();
+        } else if (type == "std::vector<float>") {
+            f.m_value = value.get<std::vector<float>>();
+        } else if (type == "std::vector<double>") {
+            f.m_value = value.get<std::vector<double>>();
+        } else if (type == "std::vector<bool>") {
+            f.m_value = value.get<std::vector<bool>>();
+        } else if (type == "std::vector<std::string>") {
+            f.m_value = value.get<std::vector<std::string>>();
+        } else if (type == "std::vector<aos::jack::V2>") {
+            std::vector<aos::jack::V2> v2array;
+            for (const auto& item : value) {
+                aos::jack::V2 v2{};
+                v2.m_x = item.at("m_x").get<float>();
+                v2.m_y = item.at("m_y").get<float>();
+                v2array.push_back(v2);
+            }
+            f.m_value = v2array;
+        } else {
+            // Unknown type, leave m_value empty
+            f.m_value.reset();
+        }
+    } catch (const std::exception& e) {
+        // If deserialization fails, leave m_value empty
+        f.m_value.reset();
+    }
 }
 
 std::string Field::toString() const
