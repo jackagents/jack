@@ -10,6 +10,7 @@
 #include <simple/impl/services/fanserviceimpl.h>
 #include <simple/meta/messages/temperaturereadingmeta.h>
 #include <simple/meta/messages/fancontrolmeta.h>
+#include <simple/meta/messages/fanstatusmeta.h>
 #include <simple/impl/goals/maintaincomfortimpl.h>
 #include <simple/impl/plans/turnfanonplanimpl.h>
 #include <simple/impl/plans/turnfanoffplanimpl.h>
@@ -48,6 +49,13 @@ static void initMessages([[ maybe_unused ]] aos::jack::Engine& bdi)
         &FanControl::anyToJSON,
         nullptr,
         &FanControl::anyToNlohmannJSON);
+    registry.registerType<FanStatus>(
+        "simple.Fan Status",
+        &FanStatus::anyToMessage,
+        nullptr,
+        &FanStatus::anyToJSON,
+        nullptr,
+        &FanStatus::anyToNlohmannJSON);
     registry.registerType<std::vector<TemperatureReading>>(
         "simple.Temperature Reading[]",
         nullptr,
@@ -62,10 +70,18 @@ static void initMessages([[ maybe_unused ]] aos::jack::Engine& bdi)
         nullptr,
         &FanControl::anyArrayToJSON,
         &FanControl::anyToNlohmannJSON);
+    registry.registerType<std::vector<FanStatus>>(
+        "simple.Fan Status[]",
+        nullptr,
+        &FanStatus::anyArrayToMessage,
+        nullptr,
+        &FanStatus::anyArrayToJSON,
+        &FanStatus::anyToNlohmannJSON);
 
     /// Create message schemas
     bdi.commitMessageSchema(&TemperatureReading::schema());
     bdi.commitMessageSchema(&FanControl::schema());
+    bdi.commitMessageSchema(&FanStatus::schema());
 }
 
 static void initActions([[ maybe_unused ]] aos::jack::Engine& bdi)
@@ -131,8 +147,12 @@ static void initServices([[ maybe_unused ]] aos::jack::Engine& bdi)
 {
 
     { /// FanService
+        const std::string_view msgList[] = {
+            "simple.Fan Status"sv,
+        };
 
         bdi.service(FanService::MODEL_NAME)
+            .messageNames(msgList)
             .commit<FanService>();
     }
 }
@@ -248,6 +268,7 @@ void simple::initSimModel(aos::sim::SimulationBase* sim)
     /// should only use the model name verbatim.
     sim->addJsonComponentCreator(TemperatureReading::MODEL_NAME, TemperatureReading::JsonConfig::parseJson);
     sim->addJsonComponentCreator(FanControl::MODEL_NAME, FanControl::JsonConfig::parseJson);
+    sim->addJsonComponentCreator(FanStatus::MODEL_NAME, FanStatus::JsonConfig::parseJson);
     sim->addJsonComponentCreator(FanServiceComponent::COMPONENT_NAME, FanServiceComponent::JsonConfig::parseJson);
 }
 

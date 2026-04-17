@@ -3,6 +3,7 @@
 /// Project
 #include <simple/impl/services/fanserviceimpl.h>
 #include <simple/meta/messages/fancontrolmeta.h>
+#include <simple/meta/messages/fanstatusmeta.h>
 
 /// JACK
 #include <jack/corelib.h>

@@ -11,6 +11,7 @@ namespace aos::jack { class Engine; }
 
 
 class FanControl;
+class FanStatus;
 
 
 class FanService;

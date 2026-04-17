@@ -269,6 +269,24 @@
                 }
             ],
             "editor": []
+        },
+        {
+            "uuid": "f8a7b2e1-3c4d-5e6f-7a8b-9c0d1e2f3a4b",
+            "name": "Fan Status",
+            "module": "simple",
+            "note": "Published by FanService to indicate current fan state",
+            "component": false,
+            "fields": [
+                {
+                    "name": "is_on",
+                    "note": "True if fan is currently on",
+                    "type": "Bool",
+                    "is_array": false,
+                    "default": "false",
+                    "hidden": false
+                }
+            ],
+            "editor": []
         }
     ],
     "services": [
@@ -289,7 +307,16 @@
                     "module": "simple"
                 }
             ],
-            "topics": []
+            "topics": [
+                {
+                    "name": "Fan Status Publisher",
+                    "message": {
+                        "uuid": "f8a7b2e1-3c4d-5e6f-7a8b-9c0d1e2f3a4b",
+                        "name": "Fan Status",
+                        "module": "simple"
+                    }
+                }
+            ]
         }
     ],
     "entities": [],

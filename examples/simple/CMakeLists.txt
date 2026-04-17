@@ -38,6 +38,7 @@ if (NOT includeResult)
     message(FATAL_ERROR "meta/simple.cmake not found, jack-make gen may have failed")
 endif()
 
+# Original monolithic example
 add_executable(simpleapp
     ${JACK_MAKE_GENERATED_HEADERS_SIMPLE}
     ${JACK_MAKE_GENERATED_SOURCES_SIMPLE}
@@ -52,8 +53,40 @@ target_link_libraries(simpleapp PRIVATE
     jack_core::jack_core
 )
 
+# Distributed service node (FanService only)
+add_executable(simple_service
+    ${JACK_MAKE_GENERATED_HEADERS_SIMPLE}
+    ${JACK_MAKE_GENERATED_SOURCES_SIMPLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/main_service.cpp
+)
+
+target_include_directories(simple_service PUBLIC
+    ${JACK_MAKE_GENERATED_INCLUDE_DIRS_SIMPLE}
+)
+
+target_link_libraries(simple_service PRIVATE
+    jack_core::jack_core
+)
+
+# Distributed agent node (ThermostatAgent with proxy FanService)
+add_executable(simple_agent
+    ${JACK_MAKE_GENERATED_HEADERS_SIMPLE}
+    ${JACK_MAKE_GENERATED_SOURCES_SIMPLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/main_agent.cpp
+)
+
+target_include_directories(simple_agent PUBLIC
+    ${JACK_MAKE_GENERATED_INCLUDE_DIRS_SIMPLE}
+)
+
+target_link_libraries(simple_agent PRIVATE
+    jack_core::jack_core
+)
+
 install(TARGETS
     simpleapp
+    simple_service
+    simple_agent
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin

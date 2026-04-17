@@ -24,6 +24,7 @@ set(JACK_MAKE_GENERATED_HEADERS_SIMPLE
     # Beliefsets
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/temperaturereadingmeta.h
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/fancontrolmeta.h
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/fanstatusmeta.h
 
     # Agents
     ${CMAKE_CURRENT_LIST_DIR}/../impl/agents/thermostatagentimpl.h
@@ -56,6 +57,7 @@ set(JACK_MAKE_GENERATED_SOURCES_SIMPLE
     # Beliefsets
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/temperaturereadingmeta.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/fancontrolmeta.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../meta/messages/fanstatusmeta.cpp
 
     # Agents
     ${CMAKE_CURRENT_LIST_DIR}/../impl/agents/thermostatagentimpl.cpp
