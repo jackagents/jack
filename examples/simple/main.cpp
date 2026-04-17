@@ -28,7 +28,7 @@ int main(int /*argc*/, char **/*argv*/)
     std::cout << "  Simple Thermostat Example" << std::endl;
     std::cout << "========================================" << std::endl;
     std::cout << "Temperature thresholds: Fan ON at 25C, Fan OFF at 23C" << std::endl;
-    std::cout << "Physics: Fan ON = -0.5C/tick, Fan OFF = +0.5C/tick" << std::endl;
+    std::cout << "Physics: Fan ON = -0.01C/tick, Fan OFF = +0.01C/tick" << std::endl;
     std::cout << "Press Ctrl+C to exit" << std::endl;
     std::cout << "========================================" << std::endl;
 
@@ -46,7 +46,7 @@ int main(int /*argc*/, char **/*argv*/)
 
     // Initialize temperature
     float temperature = 24.0f;
-    const float TEMP_CHANGE_RATE = 0.5f;
+    const float TEMP_CHANGE_RATE = 0.01f;
     const float FAN_ON_THRESHOLD = 25.0f;
     const float FAN_OFF_THRESHOLD = 23.0f;
 
