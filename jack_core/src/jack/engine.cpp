@@ -1163,11 +1163,59 @@ void Engine::sendBusEvent(protocol::Event* event)
         }
     }
 
+    /// If the recipient is a BDI entity (agent/service/team) rather than a
+    /// node, resolve its host node from the bus directory so the adapter can
+    /// route the message to the correct WebSocket connection.  The routing
+    /// table in the adapter is keyed by node ID, not entity UUID.
+    ///
+    /// We restore the original recipient afterwards so callers are not surprised.
+    protocol::BusAddress originalRecipient = event->recipient;
+    if (event->recipient.isSet() && event->recipient.type != protocol::NodeType_NODE) {
+        auto it = m_busDirectory.find(event->recipient);
+        if (it != m_busDirectory.end() && it->second.m_hostNode.isSet()) {
+            event->recipient = it->second.m_hostNode;
+            JACK_DEBUG("Resolved recipient '{}' to host node '{}'",
+                       originalRecipient.name, event->recipient.name);
+        } else {
+            JACK_WARNING("sendBusEvent: recipient '{}' not in bus directory or host node unknown, broadcasting",
+                         event->recipient.name);
+        }
+    }
+
     TracyCZoneN(debugTracySendEvents, "Broadcast events on all bus adapters", true);
     for (auto adaptor : m_busAdapters) {
         adaptor->sendEvent(event);
     }
     TracyCZoneEnd(debugTracySendEvents);
+
+    event->recipient = originalRecipient;
+}
+
+void Engine::announceLocalEntities()
+{
+    /// Re-broadcast REGISTER events for every concrete (non-proxy) service and
+    /// agent so that newly-connected peers can populate their bus directories.
+    for (Service* service : m_services) {
+        if (!service->isProxy()) {
+            protocol::Register busEvent = makeProtocolEvent<protocol::Register>();
+            busEvent.proxy        = false;
+            busEvent.address      = service->busAddress();
+            busEvent.templateType = service->name();
+            busEvent.start        = (service->state() != Service::STOPPED);
+            sendBusEvent(&busEvent);
+            JACK_DEBUG("Re-announced service '{}' to newly connected peer", service->name());
+        }
+    }
+    for (Agent* agent : m_agents) {
+        if (!agent->isProxy()) {
+            protocol::Register busEvent = makeProtocolEvent<protocol::Register>();
+            busEvent.proxy        = false;
+            busEvent.address      = agent->busAddress();
+            busEvent.templateType = agent->templateName();
+            sendBusEvent(&busEvent);
+            JACK_DEBUG("Re-announced agent '{}' to newly connected peer", agent->name());
+        }
+    }
 }
 
 static void assertHeaderValid(const protocol::BDILogHeader& header)
@@ -1550,9 +1598,31 @@ void Engine::eventDispatch(Event* event)
                             }
                         }
                     } else {
-                        service = createServiceInstance(registerEvent->templateType, registerEvent->address.name, registerEvent->proxy, id);
-                        if (registerEvent->start) {
-                            service->start();
+                        /// No service with the authoritative UUID exists yet.
+                        /// Check whether a proxy with the same name but a different
+                        /// UUID was pre-created (e.g. manually in application code
+                        /// before the REGISTER arrived).  If so, adopt the
+                        /// authoritative UUID so that bus-directory lookups succeed.
+                        Service* existingProxy = nullptr;
+                        for (Service* s : m_services) {
+                            if (s->name() == registerEvent->address.name) {
+                                existingProxy = s;
+                                break;
+                            }
+                        }
+                        if (existingProxy && existingProxy->isProxy()) {
+                            JACK_DEBUG("Adopting authoritative UUID for pre-created proxy service "
+                                       "[service={}, oldId={}, newId={}]",
+                                       registerEvent->address.name,
+                                       existingProxy->UUID().toString(),
+                                       id.toString());
+                            existingProxy->setUUID(id);
+                            service = existingProxy;
+                        } else {
+                            service = createServiceInstance(registerEvent->templateType, registerEvent->address.name, registerEvent->proxy, id);
+                            if (registerEvent->start) {
+                                service->start();
+                            }
                         }
                     }
                 } else {
@@ -1564,6 +1634,9 @@ void Engine::eventDispatch(Event* event)
                 /// Store a record of the registered entity
                 BusAddressableEntity& entity  = m_busDirectory[registerEvent->address];
                 entity.m_lastMessageClockTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_internalClock);
+                if (registerEvent->senderNode.isSet()) {
+                    entity.m_hostNode = registerEvent->senderNode;
+                }
             } break;
 
             case Event::MESSAGE: {
@@ -1735,10 +1808,14 @@ enum CheckNodeType
 /// The set of rules to check for validating the base protocol event
 struct CheckRule
 {
-    CheckPresence recipient;     /// Enforce whether or not the recipient should be set
-    CheckPresence sender;        /// Enforce whether or not the sender should be set
-    CheckNodeType recipientType; /// Enforce the type of recipient if the recipient is set
-    CheckNodeType senderType;    /// Enforce the type of sender if the sender is set
+    CheckPresence recipient;          /// Enforce whether or not the recipient should be set
+    CheckPresence sender;             /// Enforce whether or not the sender should be set
+    CheckNodeType recipientType;      /// Enforce the type of recipient if the recipient is set
+    CheckNodeType senderType;         /// Enforce the type of sender if the sender is set
+    /// When true, a sender that is not a local instance is tolerated (remote node).
+    /// The engine will still validate the address type but won't reject the event
+    /// if there is no local Service*/Agent* matching the sender address.
+    bool          senderAllowRemote = false;
 };
 
 /// Validates the base protocol event is valid by verifying it against a set of
@@ -1834,18 +1911,23 @@ static bool baseProtocolEventCheck(const protocol::Event*      event,
 
         case protocol::EventType_ACTION_BEGIN: {
             rule.recipient = CheckPresence::REQUIRED; rule.recipientType = CheckNodeType_BDI;
-
-            /// \todo We may allow non-BDI entities to call actions in the
-            /// future, right now we snap a pointer to an instance for the sender
-            /// which is not possible for entites we only loosely know about,
-            /// i.e. a node/generic application that does not have a proxy
-            /// instance but only an address.
-            rule.sender    = CheckPresence::REQUIRED; rule.senderType    = CheckNodeType_BDI;
+            /// The sender is the agent that requested the action.  In a
+            /// distributed deployment the agent lives on a different node and
+            /// has no local Service* instance here — allow that case so the
+            /// event isn't rejected.  The reply is routed back via the bus
+            /// using ActionEvent::m_remoteCaller instead of caller*.
+            rule.sender             = CheckPresence::REQUIRED;
+            rule.senderType         = CheckNodeType_BDI;
+            rule.senderAllowRemote  = true;
         } break;
 
         case protocol::EventType_ACTION_UPDATE: {
-            rule.recipient = CheckPresence::REQUIRED; rule.recipientType = CheckNodeType_AGENT_TYPES;
-            rule.sender    = CheckPresence::REQUIRED; rule.senderType    = CheckNodeType_BDI;
+            rule.recipient          = CheckPresence::REQUIRED; rule.recipientType = CheckNodeType_AGENT_TYPES;
+            rule.sender             = CheckPresence::REQUIRED; rule.senderType    = CheckNodeType_BDI;
+            /// The sender is the service that executed the action; in a
+            /// distributed deployment it lives on a different node and has no
+            /// local Service* instance on the agent node.
+            rule.senderAllowRemote  = true;
         } break;
 
         case protocol::EventType_BDI_LOG: {
@@ -1859,14 +1941,15 @@ static bool baseProtocolEventCheck(const protocol::Event*      event,
      **************************************************************************/
     /// \note Use a table driven approach to verify the base event
     struct BusAddressRuleCheck {
-        const char *                errorLabel; /// The label to prefix errors with if there's an error
-        const protocol::BusAddress& address;    /// The address in the event to verify
-        CheckPresence               presence;   /// Enforce whether or not the address should be set
-        CheckNodeType               nodeType;   /// Enforce the type of address it should be if it is set
-        Service**                   instance;   /// Retrieves the BDI instance of the entity specified by the address
+        const char *                errorLabel;   /// The label to prefix errors with if there's an error
+        const protocol::BusAddress& address;      /// The address in the event to verify
+        CheckPresence               presence;     /// Enforce whether or not the address should be set
+        CheckNodeType               nodeType;     /// Enforce the type of address it should be if it is set
+        Service**                   instance;     /// Retrieves the BDI instance of the entity specified by the address
+        bool                        allowRemote;  /// If true, tolerate a missing local instance (remote node entity)
     } const busAddressRuleChecks[] = {
-        BusAddressRuleCheck{"Recipient", event->recipient, rule.recipient, rule.recipientType, recipient},
-        BusAddressRuleCheck{"Sender",    event->sender,    rule.sender,    rule.senderType,    sender},
+        BusAddressRuleCheck{"Recipient", event->recipient, rule.recipient, rule.recipientType, recipient, false},
+        BusAddressRuleCheck{"Sender",    event->sender,    rule.sender,    rule.senderType,    sender,    rule.senderAllowRemote},
     };
 
     for (const BusAddressRuleCheck &check : busAddressRuleChecks) {
@@ -1945,15 +2028,25 @@ static bool baseProtocolEventCheck(const protocol::Event*      event,
                     }
 
                     if ((*check.instance) == nullptr) {
-                        char const* entityType =
-                              check.address.type == protocol::NodeType_SERVICE ? "Service"
-                            : check.address.type == protocol::NodeType_AGENT   ? "Agent"
-                            : check.address.type == protocol::NodeType_TEAM    ? "Team"
-                                                                               : "INTERNAL ADDRESS TYPE ERROR";
+                        if (check.allowRemote) {
+                            /// The address refers to a remote entity on another
+                            /// node — no local instance is expected.  Log at
+                            /// debug level and continue; callers must handle a
+                            /// null instance pointer for this field.
+                            JACK_DEBUG("Bus event sender has no local instance (remote entity) "
+                                       "[address={}, event={}]",
+                                       check.address.toString(), event->toString());
+                        } else {
+                            char const* entityType =
+                                  check.address.type == protocol::NodeType_SERVICE ? "Service"
+                                : check.address.type == protocol::NodeType_AGENT   ? "Agent"
+                                : check.address.type == protocol::NodeType_TEAM    ? "Team"
+                                                                                   : "INTERNAL ADDRESS TYPE ERROR";
 
-                        /// \note The event specified a sender/recipient that
-                        /// the engine does not have an instance of.
-                        error.append("%s specifies non-existent %s", check.errorLabel, entityType);
+                            /// \note The event specified a sender/recipient that
+                            /// the engine does not have an instance of.
+                            error.append("%s specifies non-existent %s", check.errorLabel, entityType);
+                        }
                     }
                 } break;
             }
@@ -2400,6 +2493,18 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             jackEvent->registerEvent = std::move(*event);
             jackEvent->caller        = sender;
             routeEvent(jackEvent);
+
+            /// When a remote node introduces itself (node-level REGISTER),
+            /// re-broadcast our entity registrations so the new peer learns
+            /// about our services/agents and can populate its bus directory.
+            /// Without this, entities created before the peer connected are
+            /// invisible to it and targeted routing fails.
+            if (jackEvent->registerEvent.address.type == protocol::NodeType_NODE &&
+                jackEvent->registerEvent.senderNode.isSet() &&
+                haveBusAdapter())
+            {
+                announceLocalEntities();
+            }
         } break;
 
         case protocol::EventType_AGENT_JOIN_TEAM: {
@@ -2508,6 +2613,12 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             jackEvent->recipient = recipient;
             jackEvent->caller    = sender;
             jackEvent->m_taskId  = std::move(taskId);
+            /// When the caller is a remote agent (no local Service* instance),
+            /// store its bus address so processCompletedAction() can route the
+            /// ACTION_UPDATE reply back over the bus.
+            if (!sender) {
+                jackEvent->m_remoteCaller = baseEvent->sender;
+            }
             recipient->routeEvent(jackEvent);
         } break;
 

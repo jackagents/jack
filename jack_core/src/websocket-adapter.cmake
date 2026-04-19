@@ -38,10 +38,15 @@ add_library(jack-websocket-adapter STATIC) #SHARED)
 
 set(WEBSOCKET_ADAPTER_PUBLIC_HEADERS
     jack/websocket-adapter/websocketadapter.h
+    jack/websocket-adapter/websocketmeshadapter.h
+    jack/websocket-adapter/routingtable.h
+    jack/websocket-adapter/websocketclient.h
 )
 
 target_sources(jack-websocket-adapter PRIVATE
-    jack/websocket-adapter/websocketadapter.cpp
+    jack/websocket-adapter/websocketmeshadapter.cpp
+    jack/websocket-adapter/routingtable.cpp
+    jack/websocket-adapter/websocketclient.cpp
 )
 target_include_directories(jack-websocket-adapter PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -57,10 +62,13 @@ target_include_directories(jack-websocket-adapter PUBLIC
 target_compile_definitions(jack-websocket-adapter PUBLIC
     -DJACK_WITH_WEBSOCKETS)
 
+find_package(ixwebsocket CONFIG REQUIRED)
+
 target_link_libraries(jack-websocket-adapter
     PRIVATE
         # jack-msgs
         unofficial::uwebsockets::uwebsockets
+        ixwebsocket::ixwebsocket
         fmt::fmt-header-only
     PUBLIC
         jack-event-protocol

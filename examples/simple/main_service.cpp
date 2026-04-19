@@ -2,7 +2,7 @@
 #include <simple/meta/messages/fanstatusmeta.h>
 #include <simple/impl/services/fanserviceimpl.h>
 #include <jack/jack.h>
-#include <jack/websocket-adapter/websocketadapter.h>
+#include <jack/websocket-adapter/websocketmeshadapter.h>
 
 #include <iostream>
 #include <thread>
@@ -30,15 +30,15 @@ int main(int /*argc*/, char **/*argv*/)
     // Create the BDI engine for this node
     simple bdi;
 
-    // Create WebSocket adapter to communicate on the bus
-    aos::WebSocketAdapter wsAdapter(8080);
-    wsAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
-    if (!wsAdapter.connect()) {
-        std::cerr << "Failed to start WebSocket adapter on port 8080" << std::endl;
+    // Create mesh adapter: listen on 8080 (no peers - service is server-only)
+    aos::WebSocketMeshAdapter meshAdapter("ServiceNode", 8080);
+    meshAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
+    if (!meshAdapter.connect()) {
+        std::cerr << "Failed to start mesh adapter on port 8080" << std::endl;
         return 1;
     }
-    bdi.addBusAdapter(&wsAdapter);
-    std::cout << "WebSocket adapter listening on port 8080" << std::endl;
+    bdi.addBusAdapter(&meshAdapter);
+    std::cout << "WebSocket mesh adapter listening on port 8080 as 'ServiceNode'" << std::endl;
 
     // Create and start the concrete (non-proxy) FanService
     FanService* fanService = bdi.createFanServiceInstance("FanService", false /*proxy*/);
@@ -53,7 +53,7 @@ int main(int /*argc*/, char **/*argv*/)
 
     std::cout << std::endl << "Shutting down..." << std::endl;
     fanService->stop();
-    wsAdapter.disconnect();
+    meshAdapter.disconnect();
     std::cout << "Done!" << std::endl;
 
     return 0;

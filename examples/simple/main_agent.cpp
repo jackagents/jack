@@ -3,7 +3,7 @@
 #include <simple/impl/agents/thermostatagentimpl.h>
 #include <simple/impl/services/fanserviceimpl.h>
 #include <jack/jack.h>
-#include <jack/websocket-adapter/websocketadapter.h>
+#include <jack/websocket-adapter/websocketmeshadapter.h>
 
 #include <iostream>
 #include <thread>
@@ -31,15 +31,17 @@ int main(int /*argc*/, char **/*argv*/)
     // Create the BDI engine for this node
     simple bdi;
 
-    // Create WebSocket adapter to connect to service
-    aos::WebSocketAdapter wsAdapter(8080);
-    wsAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
-    if (!wsAdapter.connect()) {
-        std::cerr << "Failed to connect WebSocket adapter to port 8080" << std::endl;
+    // Create mesh adapter: listen on 8081, connect to service on 8080
+    aos::WebSocketMeshAdapter meshAdapter("AgentNode", 8081);
+    meshAdapter.addPeer("ServiceNode", "localhost:8080");
+    meshAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
+    if (!meshAdapter.connect()) {
+        std::cerr << "Failed to start mesh adapter on port 8081" << std::endl;
         return 1;
     }
-    bdi.addBusAdapter(&wsAdapter);
-    std::cout << "WebSocket adapter connected to port 8080" << std::endl;
+    bdi.addBusAdapter(&meshAdapter);
+    std::cout << "WebSocket mesh adapter started as 'AgentNode' on port 8081" << std::endl;
+    std::cout << "Connecting to ServiceNode at localhost:8080..." << std::endl;
 
     // Create a PROXY service - forwards to real service over bus
     FanService* proxyFanService = bdi.createFanServiceInstance("FanService", true /*proxy*/);
@@ -100,7 +102,7 @@ int main(int /*argc*/, char **/*argv*/)
     std::cout << std::endl << "Shutting down..." << std::endl;
     agent->stop();
     proxyFanService->stop();
-    wsAdapter.disconnect();
+    meshAdapter.disconnect();
     std::cout << "Done!" << std::endl;
 
     return 0;

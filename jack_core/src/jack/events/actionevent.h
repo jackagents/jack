@@ -89,11 +89,16 @@ private:
      * Member Fields
      **************************************************************************/
 public:
-    std::vector<std::string> m_resourceLocks; ///< Track the resource usage of the action
-    GoalHandle               m_goal;          ///< Goal that triggered this task
-    std::string              m_plan;          ///< Plan that the action was triggered from
-    UniqueId                 m_intentionId;   ///< ID of the intention that triggered this task
-    UniqueId                 m_taskId;        ///< ID of the task in intention's plan that triggered this task
+    std::vector<std::string>  m_resourceLocks; ///< Track the resource usage of the action
+    GoalHandle                m_goal;          ///< Goal that triggered this task
+    std::string               m_plan;          ///< Plan that the action was triggered from
+    UniqueId                  m_intentionId;   ///< ID of the intention that triggered this task
+    UniqueId                  m_taskId;        ///< ID of the task in intention's plan that triggered this task
+    /// When an ACTION_BEGIN arrives over the bus from a remote node, 'caller'
+    /// will be null (no local Service* instance for a remote agent).  We store
+    /// the remote caller's bus address here so that processCompletedAction()
+    /// can emit an ACTION_UPDATE bus event back to that remote node.
+    protocol::BusAddress      m_remoteCaller;
 
 protected:
     std::shared_ptr<Message> m_request; ///< Request parameters, parameters required for the execution of the action

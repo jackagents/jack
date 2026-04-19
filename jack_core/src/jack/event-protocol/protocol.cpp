@@ -155,6 +155,22 @@ void to_json(nlohmann::json& nlohmann_json_j, const ActionUpdate& nlohmann_json_
     }
 }
 
+void from_json(const nlohmann::json& nlohmann_json_j, ActionUpdate& nlohmann_json_t)
+{
+    nlohmann::from_json(nlohmann_json_j, static_cast<Event&>(nlohmann_json_t));
+
+    nlohmann_json_j.at("name").get_to(nlohmann_json_t.name);
+    nlohmann_json_j.at("taskId").get_to(nlohmann_json_t.taskId);
+    nlohmann_json_j.at("goal").get_to(nlohmann_json_t.goal);
+    nlohmann_json_j.at("goalId").get_to(nlohmann_json_t.goalId);
+    nlohmann_json_j.at("intentionId").get_to(nlohmann_json_t.intentionId);
+    nlohmann_json_j.at("plan").get_to(nlohmann_json_t.plan);
+    nlohmann_json_j.at("status").get_to(nlohmann_json_t.status);
+    // 'reply' is a shared_ptr<Message> that requires schema knowledge to reconstruct.
+    // The engine resolves the action schema from its registry after receiving the event.
+    nlohmann_json_t.reply = nullptr;
+}
+
 void to_json(nlohmann::json& nlohmann_json_j, const ActionBegin& nlohmann_json_t)
 {
     // call the base
@@ -176,6 +192,22 @@ void to_json(nlohmann::json& nlohmann_json_j, const ActionBegin& nlohmann_json_t
     }
 
     nlohmann_json_j["resourceLocks"] = nlohmann_json_t.resourceLocks;
+}
+
+void from_json(const nlohmann::json& nlohmann_json_j, ActionBegin& nlohmann_json_t)
+{
+    nlohmann::from_json(nlohmann_json_j, static_cast<Event&>(nlohmann_json_t));
+
+    nlohmann_json_j.at("name").get_to(nlohmann_json_t.name);
+    nlohmann_json_j.at("taskId").get_to(nlohmann_json_t.taskId);
+    nlohmann_json_j.at("goal").get_to(nlohmann_json_t.goal);
+    nlohmann_json_j.at("goalId").get_to(nlohmann_json_t.goalId);
+    nlohmann_json_j.at("intentionId").get_to(nlohmann_json_t.intentionId);
+    nlohmann_json_j.at("plan").get_to(nlohmann_json_t.plan);
+    nlohmann_json_j.at("resourceLocks").get_to(nlohmann_json_t.resourceLocks);
+    // 'message' is a shared_ptr<Message> that requires schema knowledge to reconstruct.
+    // The engine looks up the action schema and populates the message after receiving the event.
+    nlohmann_json_t.message = nullptr;
 }
 
 void from_json(const nlohmann::json& nlohmann_json_j, Pursue& nlohmann_json_t)
