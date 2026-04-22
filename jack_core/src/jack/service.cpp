@@ -272,7 +272,12 @@ bool Service::processCompletedAction(ActionEvent* action)
         /// Determine whether the original caller was a local or remote entity.
         /// When an ACTION_BEGIN arrived over the bus from a remote node, caller
         /// is null and m_remoteCaller holds the originator's bus address.
-        const bool remoteAction = (!action->caller && action->m_remoteCaller.isSet());
+        /// NOTE: m_remoteCaller is now always set for service-executed actions,
+        /// so we just check if it's set to determine if this is a remote action.
+        const bool remoteCallerSet = action->m_remoteCaller.isSet();
+        const bool remoteAction = remoteCallerSet;
+        JACK_INFO("[DEBUG processCompletedAction] action={}, remoteCallerSet={}, remoteAction={}",
+                  action->name(), remoteCallerSet, remoteAction);
 
         if (remoteAction) {
             /// The action was triggered by a remote agent over the bus.
@@ -293,8 +298,8 @@ bool Service::processCompletedAction(ActionEvent* action)
                                            : protocol::ActionStatus_FAILED;
                 busEvent.reply       = action->reply();
                 m_engine.sendBusEvent(&busEvent);
-                JACK_DEBUG("Remote action '{}' completed, ACTION_UPDATE sent to '{}'",
-                           action->name(), action->m_remoteCaller.name);
+                JACK_INFO("Remote action '{}' completed, ACTION_UPDATE sent to '{}'",
+                          action->name(), action->m_remoteCaller.name);
             } else {
                 JACK_WARNING("Remote action '{}' completed but no bus adapter to send reply", action->name());
             }
@@ -434,6 +439,23 @@ void Service::eventDispatch(Event *event)
             assert(returnEventToAllocator);
 
             if (isProxy()) {
+                /// If the action is already complete (SUCCESS/FAIL), don't forward to bus.
+                /// This happens when we receive a completion notification from the remote service.
+                if (actionEvent->status == Event::SUCCESS || actionEvent->status == Event::FAIL) {
+                    JACK_INFO("[DEBUG Service ACTION] Proxy service '{}' received completed action '{}' with status={}, executing handler to update state",
+                              name(), actionEvent->name(), static_cast<int>(actionEvent->status));
+                    /// For completed actions on proxy, execute the handler to update local state
+                    auto actionHandlerIt = m_actionHandlers.find(actionEvent->name());
+                    if (actionHandlerIt != m_actionHandlers.end()) {
+                        JACK_INFO("[DEBUG Service ACTION] Proxy executing handler for '{}'", actionEvent->name());
+                        const auto& actionFunction = actionHandlerIt->second;
+                        actionFunction(*this, *actionEvent->request(), *actionEvent->reply(), actionEvent->handle());
+                        JACK_INFO("[DEBUG Service ACTION] Proxy handler executed for '{}'", actionEvent->name());
+                    }
+                    /// Clean up the action event
+                    JACK_CHUNK_ALLOCATOR_GIVE(&m_engine.m_eventAllocator, ActionEvent, actionEvent, JACK_ALLOCATOR_CLEAR_MEMORY);
+                    returnEventToAllocator = false;
+                } else {
                 /// \note Forward event onto the bus so it arrives at the real
                 /// service instance.
                 JACK_INFO("[DEBUG Service ACTION] Proxy service '{}' handling action '{}' - forwarding to bus", name(), actionEvent->name());
@@ -458,6 +480,7 @@ void Service::eventDispatch(Event *event)
                 } else {
                     JACK_WARNING("Proxy service has no bus adapter - cannot forward action '{}'", actionEvent->name());
                 }
+                }  /// End of forwarding block for pending actions
             } else {
                 JACK_INFO("[DEBUG Service ACTION] Concrete service '{}' handling action '{}' - looking for handler", name(), actionEvent->name());
                 auto actionHandlerIt = m_actionHandlers.find(actionEvent->name());
@@ -491,12 +514,16 @@ void Service::eventDispatch(Event *event)
 
                     const auto& actionFunction = actionHandlerIt->second;
                     actionEvent->status        = actionFunction(*this, *actionEvent->request(), *actionEvent->reply(), actionEvent->handle());
+                    JACK_INFO("[DEBUG Service ACTION] Action '{}' completed with status={} (PENDING=0, SUCCESS=1, FAIL=2)",
+                              actionEvent->name(), static_cast<int>(actionEvent->status));
 
                     /// \todo Test resource locks being sent over the bus and
                     /// locking them here
                     /// Try and fast track the action, no-op if not possible
                     returnEventToAllocator = false;
-                    if (!processCompletedAction(actionEvent)) {
+                    bool processed = processCompletedAction(actionEvent);
+                    JACK_INFO("[DEBUG Service ACTION] processCompletedAction returned {}", processed);
+                    if (!processed) {
                         m_currentActions.push_back(actionEvent);
                     }
                 } else {

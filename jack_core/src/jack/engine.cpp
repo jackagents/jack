@@ -1934,7 +1934,10 @@ static bool baseProtocolEventCheck(const protocol::Event*      event,
         } break;
 
         case protocol::EventType_ACTION_UPDATE: {
-            rule.recipient          = CheckPresence::REQUIRED; rule.recipientType = CheckNodeType_AGENT_TYPES;
+            /// Allow NODE as recipient because sendBusEvent resolves AGENT
+            /// recipients to their host NODE for WebSocket routing.
+            rule.recipient          = CheckPresence::REQUIRED;
+            rule.recipientType      = static_cast<CheckNodeType>(CheckNodeType_AGENT_TYPES | CheckNodeType_NODE);
             rule.sender             = CheckPresence::REQUIRED; rule.senderType    = CheckNodeType_BDI;
             /// The sender is the service that executed the action; in a
             /// distributed deployment it lives on a different node and has no
@@ -2127,6 +2130,7 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
     std::lock_guard<decltype(m_guardAPI)> guardScope(m_guardAPI);
     Service *recipient = nullptr;
     Service *sender    = nullptr;
+    
     if (!baseProtocolEventCheck(baseEvent, m_busAddress, m_agents, m_services, &recipient, &sender)) {
         return false;
     }
@@ -2163,6 +2167,57 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             }
         }
     }
+
+    /// WORKAROUND: For ACTION_UPDATE, when sendBusEvent resolves the recipient
+    /// to a NODE for WebSocket routing, we need to find the local agent on this
+    /// node that should receive the update.
+    /// Also need to find the sender (proxy service) since the remote service
+    /// that executed the action won't be found as a local instance.
+    if (baseEvent->type == protocol::EventType_ACTION_UPDATE) {
+        JACK_INFO("[DEBUG ACTION_UPDATE WORKAROUND] Block entered, sender={}, recipient={}", (void*)sender, (void*)recipient);
+        auto *updateEvent = dynamic_cast<protocol::ActionUpdate *>(baseEvent);
+        
+        /// Find recipient (agent) if not found
+        if (!recipient) {
+            if (baseEvent->recipient.isSet() && 
+                baseEvent->recipient.type == protocol::NodeType_NODE &&
+                baseEvent->recipient.id == m_busAddress.id) {
+                // Recipient is this node - find the agent that should receive the update
+                for (Agent *agent : m_agents) {
+                    if (!agent->isProxy()) {
+                        recipient = agent;
+                        JACK_INFO("ACTION_UPDATE workaround: Found agent '{}' to receive update for action '{}' (recipient was NODE)",
+                                  agent->name(), updateEvent->name);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        /// Find sender (proxy service) if not found
+        if (!sender) {
+            JACK_INFO("[DEBUG ACTION_UPDATE] Sender not found, checking for proxy workaround. sender.isSet={}, sender.type={}",
+                      baseEvent->sender.isSet(), static_cast<int>(baseEvent->sender.type));
+            if (baseEvent->sender.isSet() && baseEvent->sender.type == protocol::NodeType_SERVICE) {
+                UniqueId senderId = UniqueId::initFromString(baseEvent->sender.id);
+                JACK_INFO("[DEBUG ACTION_UPDATE] Looking for proxy service with id={}, valid={}",
+                          baseEvent->sender.id, senderId.valid());
+                if (senderId.valid()) {
+                    /// Look for a proxy service with matching UUID
+                    for (Service *service : m_services) {
+                        JACK_INFO("[DEBUG ACTION_UPDATE] Checking service '{}', isProxy={}, id={}",
+                                  service->name(), service->isProxy(), service->handle().m_id.toString());
+                        if (service->isProxy() && service->handle().m_id == senderId) {
+                            sender = service;
+                            JACK_INFO("ACTION_UPDATE workaround: Found proxy service '{}' as sender (remote service was not found locally)",
+                                      service->name());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }  /// End of ACTION_UPDATE workaround block
 
     #define BUS_REQUIRE_FIELD(event, container, reason)                              \
         if (container.empty()) {                                                     \
@@ -2676,9 +2731,16 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             /// When the caller is a remote agent (no local Service* instance),
             /// store its bus address so processCompletedAction() can route the
             /// ACTION_UPDATE reply back over the bus.
-            if (!sender) {
-                jackEvent->m_remoteCaller = baseEvent->sender;
-            }
+            JACK_INFO("[DEBUG ACTION_BEGIN] sender={}, senderName={}, isProxy={}, baseEvent->sender={}",
+                      (void*)sender,
+                      sender ? sender->name() : "NULL",
+                      sender ? sender->isProxy() : false,
+                      baseEvent->sender.toString());
+            /// ALWAYS set m_remoteCaller to the original sender from the protocol event.
+            /// This ensures ACTION_UPDATE can be routed back to the requester,
+            /// even if we have a local proxy/concrete instance of the sender.
+            jackEvent->m_remoteCaller = baseEvent->sender;
+            JACK_INFO("[DEBUG ACTION_BEGIN] Setting m_remoteCaller to {}", baseEvent->sender.toString());
             if (!recipient) {
                 std::cerr << "[DEBUG ACTION_BEGIN] CRITICAL: recipient is NULL, cannot route!" << std::endl;
                 JACK_CHUNK_ALLOCATOR_GIVE(&m_eventAllocator, ActionEvent, jackEvent, JACK_ALLOCATOR_CLEAR_MEMORY);
@@ -2690,87 +2752,168 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
         } break;
 
         case protocol::EventType_ACTION_UPDATE: {
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 0: Starting ACTION_UPDATE case" << std::endl;
             auto *event = dynamic_cast<protocol::ActionUpdate *>(baseEvent);
-            JACK_BUS("Event received [event={}]", event->toString());
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 0.5: dynamic_cast done, event=" << (void*)event << std::endl;
+            if (!event) {
+                std::cerr << "[DEBUG ACTION_UPDATE] ERROR: dynamic_cast failed!" << std::endl;
+                break;
+            }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 0.6: About to log event" << std::endl;
 
             /**********************************************************
              * Verify Payload
              **********************************************************/
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 1: About to check action name" << std::endl;
             BUS_REQUIRE_FIELD(event, event->name, "Action name must be non-empty");
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 2: Action name OK: " << event->name << std::endl;
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 3: About to parse taskId" << std::endl;
             UniqueId taskId = UniqueId::initFromString(event->taskId);
             if (!taskId.valid()) {
                 JACK_BUS("Bus event action task ID is invalid [event={}]", event->toString());
                 break;
             }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 4: taskId OK" << std::endl;
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 5: About to check status" << std::endl;
             if (event->status != protocol::ActionStatus_SUCCESS &&
                 event->status != protocol::ActionStatus_FAILED) {
                 JACK_BUS("Bus event action status is not success or failure enum [event={}]", event->toString());
                 break;
             }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 6: Status OK: " << static_cast<int>(event->status) << std::endl;
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 7: About to look up action: " << event->name << std::endl;
             const Action* action = getAction(event->name);
             if (!action) {
                 JACK_BUS("Bus event queried invalid action [event={}]", event->toString());
                 break;
             }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 8: Action lookup OK" << std::endl;
 
             /**********************************************************
              * Process Payload
              **********************************************************/
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 9: About to convert status" << std::endl;
             Event::Status status = {};
             switch (event->status) {
                 case protocol::ActionStatus_SUCCESS: status = Event::SUCCESS; break;
                 case protocol::ActionStatus_FAILED:  status = Event::FAIL; break;
                 default: { assert(!"Invalid code path: Should be handled in verify check"); } break;
             }
-
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 10: About to check recipient and sender" << std::endl;
             JACK_ASSERT_MSG(recipient, "Internal error: Recipient should be set, this is enforced by basic event checks");
-            assert(sender    && "Internal error: Sender should be set, this is enforced by basic event checks");
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 11: Recipient OK: " << recipient->name() << std::endl;
+            assert(sender && "Internal error: Sender should be set, this is enforced by basic event checks");
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 12: Sender OK: " << sender->name() << std::endl;
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 13: About to check action schema" << std::endl;
             /// Create a reply message
             ActionMessageSchemas actionSchema = getActionMessageSchema(action);
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 14: Schema check done, invalidFlags=" << actionSchema.invalidFlags << std::endl;
+
             if (actionSchema.invalidFlags) {
-                JACK_BUS("Bus action complete specifies action with invalid request or reply schema [event={}]", event->toString());
+                std::cerr << "[DEBUG ACTION_UPDATE] ERROR: Schema invalid, breaking" << std::endl;
                 break;
             }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 15: Schema valid, about to check reply" << std::endl;
 
             if (actionSchema.reply) {
+                std::cerr << "[DEBUG ACTION_UPDATE] Step 16: Checking reply message" << std::endl;
                 MessageSchema::VerifyMessageResult verifyResult = actionSchema.reply->verifyMessage(*event->reply.get());
+                std::cerr << "[DEBUG ACTION_UPDATE] Step 17: Reply verification done, success=" << verifyResult.success << std::endl;
                 if (!verifyResult.success) {
                     JACK_BUS("Bus event goal message has parameters that do not match the schema [goal={}, reason={}]", event->toString(), verifyResult.msg);
                     break;
                 }
             }
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 18: About to parse goalId" << std::endl;
             /// @todo populate the reply message from the incoming protocol message
             /// @note for now the message is empty and we don't support action reply message over the network
             auto goalId = jack::UniqueId::initFromString(event->goalId);
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 19: goalId parsed, valid=" << goalId.valid() << std::endl;
             if (!goalId.valid()) {
                 JACK_BUS("Bus action complete specifies invalid goal ID [event={}]", event->toString());
                 break;
             }
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 20: About to parse intentionId" << std::endl;
             auto intentionId = jack::UniqueId::initFromString(event->intentionId);
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 21: intentionId parsed, valid=" << intentionId.valid() << std::endl;
             if (!intentionId.valid()) {
                 JACK_BUS("Bus action complete specifies invalid intention ID [event={}]", event->toString());
                 break;
             }
 
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 22: About to create ActionCompleteEvent" << std::endl;
             auto* jackEvent = JACK_ALLOCATOR_NEW(&m_eventAllocator,
-                                                 ActionCompleteEvent,
-                                                 event->name,
-                                                 taskId,
-                                                 status,
-                                                 GoalHandle{event->goal, goalId},
-                                                 intentionId,
-                                                 event->plan,
-                                                 event->reply);
+                                                  ActionCompleteEvent,
+                                                  event->name,
+                                                  taskId,
+                                                  status,
+                                                  GoalHandle{event->goal, goalId},
+                                                  intentionId,
+                                                  event->plan,
+                                                  event->reply);
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 23: ActionCompleteEvent created, jackEvent=" << (void*)jackEvent << std::endl;
 
             jackEvent->recipient = recipient;
             jackEvent->caller    = sender;
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 24: About to call routeEvent" << std::endl;
             recipient->routeEvent(jackEvent);
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 25: routeEvent completed" << std::endl;
+
+            /// Update proxy service state: Find any proxy services matching the sender
+            /// (the remote service that executed the action) and notify them of the
+            /// action completion so they can update their local state.
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 26: About to look for proxy services to notify" << std::endl;
+            JACK_INFO("[DEBUG ACTION_UPDATE] Looking for proxy services to notify, sender.isSet={}, sender.type={}, m_services.size={}",
+                      baseEvent->sender.isSet(), static_cast<int>(baseEvent->sender.type), m_services.size());
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 27: About to check sender.isSet and sender.type" << std::endl;
+            if (baseEvent->sender.isSet() && baseEvent->sender.type == protocol::NodeType_SERVICE) {
+                std::cerr << "[DEBUG ACTION_UPDATE] Step 28: Sender is SERVICE, about to parse senderId" << std::endl;
+                UniqueId senderId = UniqueId::initFromString(baseEvent->sender.id);
+                std::cerr << "[DEBUG ACTION_UPDATE] Step 29: senderId parsed, valid=" << senderId.valid() << std::endl;
+                JACK_INFO("[DEBUG ACTION_UPDATE] senderId.valid={}", senderId.valid());
+                if (senderId.valid()) {
+                    std::cerr << "[DEBUG ACTION_UPDATE] Step 30: About to iterate m_services, size=" << m_services.size() << std::endl;
+                    for (Service* service : m_services) {
+                        std::cerr << "[DEBUG ACTION_UPDATE] Step 31: Checking service " << service->name() << std::endl;
+                        JACK_INFO("[DEBUG ACTION_UPDATE] Checking service '{}', isProxy={}, idMatch={}",
+                                  service->name(), service->isProxy(), service->handle().m_id == senderId);
+                        if (service->isProxy() && service->handle().m_id == senderId) {
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 32: Found matching proxy service" << std::endl;
+                            JACK_INFO("[DEBUG ACTION_UPDATE] Notifying proxy service '{}' of action '{}' completion (status={})",
+                                      service->name(), event->name,
+                                      event->status == protocol::ActionStatus_SUCCESS ? "SUCCESS" : "FAILED");
+                            /// Create an action event to notify the proxy service
+                            /// This allows the proxy to update its internal state
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 33: About to create proxyActionEvent" << std::endl;
+                            auto* proxyActionEvent = JACK_ALLOCATOR_NEW(&m_eventAllocator,
+                                                                        ActionEvent,
+                                                                        *this,
+                                                                        *action,
+                                                                        GoalHandle{event->goal, goalId},
+                                                                        intentionId,
+                                                                        event->plan,
+                                                                        taskId);
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 34: proxyActionEvent created, setting status" << std::endl;
+                            proxyActionEvent->status = status;
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 35: Setting recipient and caller" << std::endl;
+                            proxyActionEvent->recipient = service;
+                            proxyActionEvent->caller = recipient; /// The agent that requested the action
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 36: About to call service->routeEvent" << std::endl;
+                            service->routeEvent(proxyActionEvent);
+                            std::cerr << "[DEBUG ACTION_UPDATE] Step 37: service->routeEvent completed" << std::endl;
+                        }
+                    }
+                    std::cerr << "[DEBUG ACTION_UPDATE] Step 38: Finished iterating services" << std::endl;
+                }
+                std::cerr << "[DEBUG ACTION_UPDATE] Step 39: Finished senderId.valid check" << std::endl;
+            }
+            std::cerr << "[DEBUG ACTION_UPDATE] Step 40: Finished sender.isSet check" << std::endl;
         } break;
 
         case protocol::EventType_BDI_LOG: {
