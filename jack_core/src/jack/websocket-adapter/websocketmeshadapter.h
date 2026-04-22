@@ -63,6 +63,11 @@ public:
     /// @param nodeId Unique identifier of the peer to remove.
     void removePeer(std::string_view nodeId);
 
+    /// Set the node UUID for this adapter.
+    /// @param uuid The unique identifier to use in REGISTER messages.
+    /// Must be called before connect() to ensure proper node identification.
+    void setNodeUUID(const std::string& uuid);
+
     /// Set the output mode for WebSocket messages.
     /// @param mode TEXT (JSON) or BINARY (BSON).
     void setOutputMode(WebSocketOutputMode mode);

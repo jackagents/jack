@@ -114,6 +114,7 @@ struct WebSocketMeshAdapter::Impl {
      **************************************************************************/
     RoutingTable                        routingTable;
     std::string                         localNodeId;
+    std::string                         localNodeUUID;  /// Node UUID used in REGISTER messages
     WebSocketOutputMode                 outputMode                    = WebSocketOutputMode::BINARY;
 
     /**************************************************************************
@@ -157,6 +158,16 @@ void WebSocketMeshAdapter::removePeer(std::string_view nodeId)
     m_impl->clientPool->removePeer(std::string(nodeId));
 }
 
+void WebSocketMeshAdapter::setNodeUUID(const std::string& uuid)
+{
+    m_impl->localNodeUUID = uuid;
+    /// Also propagate to client pool immediately so peers created via addPeer()
+    /// will use the UUID instead of falling back to the node name.
+    if (m_impl->clientPool) {
+        m_impl->clientPool->setLocalNodeUUID(uuid);
+    }
+}
+
 void WebSocketMeshAdapter::setOutputMode(WebSocketOutputMode mode)
 {
     m_impl->outputMode = mode;
@@ -173,6 +184,9 @@ bool WebSocketMeshAdapter::connect()
      * Set local node ID for client connections (used in REGISTER messages)
      **************************************************************************/
     m_impl->clientPool->setLocalNodeId(m_impl->localNodeId);
+    if (!m_impl->localNodeUUID.empty()) {
+        m_impl->clientPool->setLocalNodeUUID(m_impl->localNodeUUID);
+    }
 
     /**************************************************************************
      * Setup callbacks for client connections
@@ -271,6 +285,16 @@ bool WebSocketMeshAdapter::connect()
                     m_impl->routingTable.registerConnection(reg.senderNode.id, ws);
 
                     JACK_INFO("Peer '{}' registered with node '{}'", reg.senderNode.id, m_impl->localNodeId);
+
+                    /// Also queue the REGISTER event to the engine so it can
+                    /// trigger announceLocalEntities() and populate its bus directory.
+                    /// The early return above was preventing proper protocol-level
+                    /// node discovery in distributed deployments.
+                    auto event = deserializeEvent(j);
+                    if (event) {
+                        std::lock_guard<std::mutex> lock(m_impl->eventQueueMutex);
+                        m_impl->eventQueue.push(std::move(event));
+                    }
                     return;
                 }
 
@@ -279,6 +303,18 @@ bool WebSocketMeshAdapter::connect()
                 if (!event) {
                     JACK_WARNING("Dropping undeserializable message on node '{}'", m_impl->localNodeId);
                     return;
+                }
+
+                /// Log ACTION_BEGIN events for debugging distributed action routing
+                if (event->type == jack::protocol::EventType_ACTION_BEGIN) {
+                    const auto* actionBegin = static_cast<const jack::protocol::ActionBegin*>(event.get());
+                    JACK_INFO("[WebSocket RECV] ACTION_BEGIN '{}' from '{}' (id={}) to '{}' (id={}) on node '{}'",
+                              actionBegin->name,
+                              event->sender.name,
+                              event->sender.id,
+                              event->recipient.name,
+                              event->recipient.id,
+                              m_impl->localNodeId);
                 }
 
                 std::lock_guard<std::mutex> lock(m_impl->eventQueueMutex);
@@ -399,6 +435,17 @@ bool WebSocketMeshAdapter::sendEvent(const jack::protocol::Event* event)
         return false;
     }
 
+    /// Log ACTION_BEGIN events for debugging distributed action routing
+    if (event->type == jack::protocol::EventType_ACTION_BEGIN) {
+        const auto* actionBegin = static_cast<const jack::protocol::ActionBegin*>(event);
+        JACK_INFO("[WebSocket SEND] ACTION_BEGIN '{}' from '{}' (id={}) to '{}' (id={})",
+                  actionBegin->name,
+                  event->sender.name,
+                  event->sender.id,
+                  event->recipient.name,
+                  event->recipient.id);
+    }
+
     /**************************************************************************
      * Serialize the event
      **************************************************************************/
@@ -487,20 +534,25 @@ bool WebSocketMeshAdapter::sendEvent(const jack::protocol::Event* event)
     /// Route to specific node
     WebSocket* ws = m_impl->routingTable.findRoute(destNode);
     if (!ws) {
+        JACK_WARNING("[WebSocket ROUTING] No route found for node '{}' in routing table, trying client pool", destNode);
         /// Try via client pool
         if (m_impl->outputMode == WebSocketOutputMode::TEXT) {
-            return m_impl->clientPool->sendTo(destNode, j.dump(), WebSocketOutputMode::TEXT);
+            bool result = m_impl->clientPool->sendTo(destNode, j.dump(), WebSocketOutputMode::TEXT);
+            JACK_INFO("[WebSocket ROUTING] Client pool sendTo('{}') result: {}", destNode, result ? "SUCCESS" : "FAILED");
+            return result;
         } else {
             nlohmann::json::to_bson(j, m_impl->messageBuffer);
             auto buffer = std::string_view(reinterpret_cast<const char*>(m_impl->messageBuffer.data()),
                                            m_impl->messageBuffer.size());
             bool result = m_impl->clientPool->sendTo(destNode, buffer, WebSocketOutputMode::BINARY);
+            JACK_INFO("[WebSocket ROUTING] Client pool sendTo('{}') result: {}", destNode, result ? "SUCCESS" : "FAILED");
             m_impl->messageBuffer.clear();
             return result;
         }
     }
 
     /// Send via the routing table connection
+    JACK_INFO("[WebSocket ROUTING] Found route for node '{}' in routing table, sending via WebSocket", destNode);
     if (m_impl->outputMode == WebSocketOutputMode::TEXT) {
         std::string msg = j.dump();
         ws->send(msg, uWS::OpCode::TEXT);

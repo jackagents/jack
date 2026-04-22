@@ -280,11 +280,12 @@ std::string ActionBegin::toString() const
 {
     ThreadScratchAllocator scratch = getThreadScratchAllocator(nullptr);
     StringBuilder builder          = StringBuilder(scratch.arena);
+    std::string messageStr = message ? message->toString() : "(null)";
     builder.append(FMT_STRING("ActionBegin{{{}, name={}, taskId={}, message={}, resourcesLocks={{"),
                    static_cast<const Event*>(this)->toString(),
                    name,
                    compactString(taskId),
-                   message->toString());
+                   messageStr);
 
     for (size_t resourceIndex = 0; resourceIndex < resourceLocks.size(); resourceIndex++) {
        std::string_view resource = resourceLocks[resourceIndex];

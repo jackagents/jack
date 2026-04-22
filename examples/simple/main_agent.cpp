@@ -30,10 +30,22 @@ int main(int /*argc*/, char **/*argv*/)
 
     // Create the BDI engine for this node
     simple bdi;
+    
+    // Set distinct node name and deterministic UUID (must match WebSocket adapter name)
+    // This ensures consistent node identity for bus routing
+    bdi.setName("AgentNode");
+    aos::jack::UniqueId agentNodeUuid = aos::jack::UniqueId::initFromString("b2c3d4e5f67890123456789012345678");
+    bdi.setNodeId(agentNodeUuid);
 
     // Create mesh adapter: listen on 8081, connect to service on 8080
+    // Note: name must match the BDI engine name for consistent node identity
     aos::WebSocketMeshAdapter meshAdapter("AgentNode", 8081);
-    meshAdapter.addPeer("ServiceNode", "localhost:8080");
+    // CRITICAL: Set UUID to match BDI engine node ID - ensures routing table uses UUID not name
+    meshAdapter.setNodeUUID(std::string(agentNodeUuid.toString()));
+    // CRITICAL: Use ServiceNode's UUID as the peer key (not name) so routing works correctly
+    // The routing table uses UUIDs, so the peer lookup must use UUID too
+    aos::jack::UniqueId serviceNodeUuid = aos::jack::UniqueId::initFromString("a1b2c3d4e5f678901234567890123456");
+    meshAdapter.addPeer(serviceNodeUuid.toString(), "localhost:8080");
     meshAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
     if (!meshAdapter.connect()) {
         std::cerr << "Failed to start mesh adapter on port 8081" << std::endl;
@@ -44,7 +56,10 @@ int main(int /*argc*/, char **/*argv*/)
     std::cout << "Connecting to ServiceNode at localhost:8080..." << std::endl;
 
     // Create a PROXY service - forwards to real service over bus
-    FanService* proxyFanService = bdi.createFanServiceInstance("FanService", true /*proxy*/);
+    // Using hardcoded UUID that matches the real service to test UUID synchronization hypothesis
+    // NOTE: UUID must be 32 hex characters without dashes for initFromString
+    aos::jack::UniqueId fanServiceUuid = aos::jack::UniqueId::initFromString("f0e1d2c3b4a569788091a2b3c4d5e6f7");
+    FanService* proxyFanService = bdi.createFanServiceInstance("FanService", true /*proxy*/, fanServiceUuid);
     proxyFanService->start();
     std::cout << "FanService proxy started" << std::endl;
 

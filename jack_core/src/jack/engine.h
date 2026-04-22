@@ -125,6 +125,11 @@ public:
     /// Set the human readable name of this JACK node
     void setName(const std::string& name);
 
+    /// Set the unique identifier (UUID) for this JACK node.
+    /// This UUID is used in protocol messages for node identification.
+    /// Must be called before adding bus adapters or starting the engine.
+    void setNodeId(const UniqueId& id);
+
     /// Return the status of the engine ( is it running )
     bool getStatus() const { return m_running; }
 

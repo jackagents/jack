@@ -29,7 +29,8 @@ enum class WebSocketOutputMode : uint8_t;
 struct PeerConnection {
     std::string nodeId;           /// Remote peer's node ID
     std::string address;          /// Remote peer's address (host:port)
-    std::string localNodeId;      /// Our local node ID (sent in REGISTER messages)
+    std::string localNodeId;      /// Our local node ID (name, sent in REGISTER messages)
+    std::string localNodeUUID;    /// Our local node UUID (sent as id in REGISTER messages)
     std::atomic<ix::WebSocket*> ixwebsocket{nullptr};
     std::atomic<bool> isConnected{false};
     std::atomic<bool> shouldStop{false};
@@ -58,6 +59,10 @@ public:
     /// Set the local node ID (our identifier, used in REGISTER messages).
     /// @param localNodeId The unique identifier of this node.
     void setLocalNodeId(std::string localNodeId);
+
+    /// Set the local node UUID (used as the id field in REGISTER messages).
+    /// @param localNodeUUID The unique identifier (UUID) of this node.
+    void setLocalNodeUUID(std::string localNodeUUID);
 
     /// Add a peer to connect to.
     /// @param nodeId Unique identifier for the remote node.
@@ -123,7 +128,8 @@ private:
     std::atomic<bool> m_running{false};
     std::vector<std::unique_ptr<ThreadState>> m_threads;
     
-    std::string m_localNodeId;  /// Our node identifier, sent in REGISTER messages
+    std::string m_localNodeId;   /// Our node identifier (name), sent in REGISTER messages
+    std::string m_localNodeUUID; /// Our node UUID, sent as the id field in REGISTER messages
 };
 
 } /// namespace aos

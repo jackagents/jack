@@ -34,6 +34,7 @@
 /// Third Party
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyC.h>
+#include <iostream>                      // for std::cerr debugging
 #include <string>                        // for char_traits, allocator
 #include <unordered_set>
 #include <stdint.h>                      // for sized types
@@ -171,6 +172,13 @@ void Engine::setName(const std::string& name)
     /// address and name uniformly.
     m_name       = name;
     m_busAddress = protocol::BusAddress(protocol::NodeType_NODE, m_id.toString(), name);
+}
+
+void Engine::setNodeId(const UniqueId& id)
+{
+    /// Update the node ID in the bus address for distributed routing
+    m_id         = id;
+    m_busAddress = protocol::BusAddress(protocol::NodeType_NODE, m_id.toString(), m_name);
 }
 
 /**************************************************************************
@@ -1910,7 +1918,11 @@ static bool baseProtocolEventCheck(const protocol::Event*      event,
         } break;
 
         case protocol::EventType_ACTION_BEGIN: {
-            rule.recipient = CheckPresence::REQUIRED; rule.recipientType = CheckNodeType_BDI;
+            /// Allow NODE as recipient because sendBusEvent resolves SERVICE
+            /// recipients to their host NODE for WebSocket routing. The
+            /// workaround in protocolEventHandler will find the actual service.
+            rule.recipient = CheckPresence::REQUIRED;
+            rule.recipientType = static_cast<CheckNodeType>(CheckNodeType_BDI | CheckNodeType_NODE);
             /// The sender is the agent that requested the action.  In a
             /// distributed deployment the agent lives on a different node and
             /// has no local Service* instance here — allow that case so the
@@ -2117,6 +2129,39 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
     Service *sender    = nullptr;
     if (!baseProtocolEventCheck(baseEvent, m_busAddress, m_agents, m_services, &recipient, &sender)) {
         return false;
+    }
+
+    /******************************************************************
+     * WORKAROUND: Handle ACTION_BEGIN with NODE-type recipient
+     * 
+     * When sendBusEvent resolves a SERVICE recipient to its host NODE for
+     * routing, the serialized event arrives with recipient=NODE instead of
+     * the original SERVICE address. This causes baseProtocolEventCheck to
+     * fail to find the target service (it looks for NODE but finds only
+     * local SERVICE agents).
+     * 
+     * Fix: If recipient is null for ACTION_BEGIN and the recipient address
+     * is a NODE pointing to this node, find the service that handles this
+     * action by looking at the action name.
+     ******************************************************************/
+    if (!recipient && baseEvent->type == protocol::EventType_ACTION_BEGIN) {
+        auto *actionEvent = dynamic_cast<protocol::ActionBegin *>(baseEvent);
+        if (baseEvent->recipient.isSet() && 
+            baseEvent->recipient.type == protocol::NodeType_NODE &&
+            baseEvent->recipient.id == m_busAddress.id) {
+            // Recipient is this node - find a service that handles this action
+            const Action *action = getAction(actionEvent->name);
+            if (action) {
+                for (Service *service : m_services) {
+                    if (!service->isProxy() && service->handlesAction(actionEvent->name)) {
+                        recipient = service;
+                        JACK_INFO("ACTION_BEGIN workaround: Found service '{}' for action '{}' (recipient was NODE)",
+                                  service->name(), actionEvent->name);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     #define BUS_REQUIRE_FIELD(event, container, reason)                              \
@@ -2457,10 +2502,16 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
 
             if (requiresTemplate) {
                 if (event->address.type == protocol::NodeType_SERVICE) {
-                    auto serviceIt = m_serviceTemplates.find(event->templateType);
-                    if (serviceIt == m_serviceTemplates.end()) {
-                        JACK_BUS("Register specifies a template that does not exist in the engine [event={}]", event->toString());
-                        break;
+                    /// Check if a service with this UUID already exists first
+                    UniqueId id = UniqueId::initFromString(event->address.id);
+                    Service* existingService = id.valid() ? getServiceByUUID(id) : nullptr;
+                    if (!existingService) {
+                        /// Only require template if we need to create a new service
+                        auto serviceIt = m_serviceTemplates.find(event->templateType);
+                        if (serviceIt == m_serviceTemplates.end()) {
+                            JACK_BUS("Register specifies a template that does not exist in the engine [event={}]", event->toString());
+                            break;
+                        }
                     }
                 } else {
                     assert(event->address.type == protocol::NodeType_AGENT || event->address.type == protocol::NodeType_TEAM);
@@ -2499,10 +2550,13 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             /// about our services/agents and can populate its bus directory.
             /// Without this, entities created before the peer connected are
             /// invisible to it and targeted routing fails.
-            if (jackEvent->registerEvent.address.type == protocol::NodeType_NODE &&
-                jackEvent->registerEvent.senderNode.isSet() &&
-                haveBusAdapter())
+            bool isNodeType = jackEvent->registerEvent.address.type == protocol::NodeType_NODE;
+            bool senderSet = jackEvent->registerEvent.senderNode.isSet();
+            bool hasBus = haveBusAdapter();
+            JACK_INFO("[DEBUG REGISTER] Conditions: isNode={}, senderSet={}, hasBus={}", isNodeType, senderSet, hasBus);
+            if (isNodeType && senderSet && hasBus)
             {
+                JACK_INFO("[DEBUG REGISTER] Calling announceLocalEntities() {}", "");
                 announceLocalEntities();
             }
         } break;
@@ -2555,7 +2609,13 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
         } break;
 
         case protocol::EventType_ACTION_BEGIN: {
+            std::cerr << "[DEBUG ACTION_BEGIN] Entered case" << std::endl;
             auto *event = dynamic_cast<protocol::ActionBegin *>(baseEvent);
+            if (!event) {
+                std::cerr << "[DEBUG ACTION_BEGIN] CRITICAL: dynamic_cast failed!" << std::endl;
+                break;
+            }
+            std::cerr << "[DEBUG ACTION_BEGIN] Cast successful, name=" << event->name << std::endl;
             JACK_BUS("Event received [event={}]", event->toString());
 
             /**********************************************************
@@ -2619,7 +2679,14 @@ bool Engine::protocolEventHandler(protocol::Event *baseEvent)
             if (!sender) {
                 jackEvent->m_remoteCaller = baseEvent->sender;
             }
+            if (!recipient) {
+                std::cerr << "[DEBUG ACTION_BEGIN] CRITICAL: recipient is NULL, cannot route!" << std::endl;
+                JACK_CHUNK_ALLOCATOR_GIVE(&m_eventAllocator, ActionEvent, jackEvent, JACK_ALLOCATOR_CLEAR_MEMORY);
+                break;
+            }
+            std::cerr << "[DEBUG ACTION_BEGIN] About to route to recipient=" << recipient->name() << std::endl;
             recipient->routeEvent(jackEvent);
+            std::cerr << "[DEBUG ACTION_BEGIN] routeEvent completed successfully" << std::endl;
         } break;
 
         case protocol::EventType_ACTION_UPDATE: {

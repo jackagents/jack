@@ -28,6 +28,11 @@ void WebSocketClientPool::setLocalNodeId(std::string localNodeId)
     m_localNodeId = std::move(localNodeId);
 }
 
+void WebSocketClientPool::setLocalNodeUUID(std::string localNodeUUID)
+{
+    m_localNodeUUID = std::move(localNodeUUID);
+}
+
 void WebSocketClientPool::addPeer(const std::string& nodeId, const std::string& address, const std::string& localNodeId)
 {
     std::lock_guard<std::mutex> lock(m_peersMutex);
@@ -39,7 +44,8 @@ void WebSocketClientPool::addPeer(const std::string& nodeId, const std::string& 
     auto peer = std::make_unique<PeerConnection>();
     peer->nodeId = nodeId;
     peer->address = address;
-    peer->localNodeId = localNodeId;  // Store our local node ID for REGISTER messages
+    peer->localNodeId = localNodeId;  // Store our local node ID (name) for REGISTER messages
+    peer->localNodeUUID = m_localNodeUUID.empty() ? localNodeId : m_localNodeUUID;  // Use UUID if set, otherwise fallback to name
     peer->ixwebsocket.store(nullptr);
     peer->isConnected.store(false);
     peer->shouldStop.store(false);
@@ -266,12 +272,12 @@ void WebSocketClientPool::maintainConnection(PeerConnection* peer)
                 peer->reconnectDelay = std::chrono::milliseconds(100); // Reset on success
                 
                 // Send REGISTER message to identify ourselves
-                // Use our local node ID (stored in peer->localNodeId)
+                // Use UUID for id and name for the name field
                 jack::protocol::Register reg;
                 reg.senderNode = jack::protocol::BusAddress(
                     jack::protocol::NodeType_NODE,
-                    peer->localNodeId,
-                    peer->localNodeId
+                    peer->localNodeUUID,  // UUID goes in the 'id' field
+                    peer->localNodeId     // Name goes in the 'name' field
                 );
                 reg.address = reg.senderNode;
                 reg.start = false;

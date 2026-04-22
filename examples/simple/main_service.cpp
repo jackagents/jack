@@ -29,9 +29,18 @@ int main(int /*argc*/, char **/*argv*/)
 
     // Create the BDI engine for this node
     simple bdi;
+    
+    // Set distinct node name and deterministic UUID (must match WebSocket adapter name)
+    // This ensures consistent node identity for bus routing
+    bdi.setName("ServiceNode");
+    aos::jack::UniqueId serviceNodeUuid = aos::jack::UniqueId::initFromString("a1b2c3d4e5f678901234567890123456");
+    bdi.setNodeId(serviceNodeUuid);
 
     // Create mesh adapter: listen on 8080 (no peers - service is server-only)
+    // Note: name must match the BDI engine name for consistent node identity
     aos::WebSocketMeshAdapter meshAdapter("ServiceNode", 8080);
+    // CRITICAL: Set UUID to match BDI engine node ID - ensures routing table uses UUID not name
+    meshAdapter.setNodeUUID(std::string(serviceNodeUuid.toString()));
     meshAdapter.setOutputMode(aos::WebSocketOutputMode::TEXT);
     if (!meshAdapter.connect()) {
         std::cerr << "Failed to start mesh adapter on port 8080" << std::endl;
@@ -40,8 +49,11 @@ int main(int /*argc*/, char **/*argv*/)
     bdi.addBusAdapter(&meshAdapter);
     std::cout << "WebSocket mesh adapter listening on port 8080 as 'ServiceNode'" << std::endl;
 
-    // Create and start the concrete (non-proxy) FanService
-    FanService* fanService = bdi.createFanServiceInstance("FanService", false /*proxy*/);
+    // Create and start the concrete (non-proxy) FanService with hardcoded UUID
+    // (matching the proxy on the agent node to test UUID synchronization hypothesis)
+    // NOTE: UUID must be 32 hex characters without dashes for initFromString
+    aos::jack::UniqueId fanServiceUuid = aos::jack::UniqueId::initFromString("f0e1d2c3b4a569788091a2b3c4d5e6f7");
+    FanService* fanService = bdi.createFanServiceInstance("FanService", false /*proxy*/, fanServiceUuid);
     fanService->start();
     std::cout << "FanService started (concrete)" << std::endl;
 
