@@ -274,6 +274,118 @@ else
 fi
 echo ""
 
+# Test 9-12: BDI Reasoning Chain Tests
+echo "========================================"
+echo "  BDI REASONING CHAIN TESTS"
+echo "========================================"
+echo ""
+
+# Test 9: BDI Goal Pursuit Started
+echo "Test 9: BDI Goal Pursuit Started"
+if grep -q "goal=simple.Maintain Comfort" "$SERVICE_LOG"; then
+    test_pass "Agent started pursuing 'Maintain Comfort' goal"
+    GOAL_LINE=$(grep "goal=simple.Maintain Comfort" "$SERVICE_LOG" | grep "BDILog" | head -1)
+    GOAL_ID=$(echo "$GOAL_LINE" | grep -oE "goalId=[a-f0-9]+\.\.[a-f0-9]+" | head -1 | sed 's/goalId=//')
+    if [ -n "$GOAL_ID" ]; then
+        test_info "Goal ID: $GOAL_ID"
+    fi
+else
+    test_fail "BDI goal pursuit not detected"
+fi
+echo ""
+
+# Test 10: BDI Intention Started (Plan Selected)
+echo "Test 10: BDI Plan Selection (Intention Started)"
+if grep -q "logType=INTENTION_STARTED.*plan=simple.Turn Fan On Plan" "$SERVICE_LOG"; then
+    test_pass "Agent selected 'Turn Fan On Plan' based on temperature > 25°C"
+    INTENTION_LINE=$(grep "logType=INTENTION_STARTED" "$SERVICE_LOG" | grep "plan=simple.Turn Fan On Plan" | head -1)
+    INTENTION_ID=$(echo "$INTENTION_LINE" | grep -oE "intentionId=[a-f0-9]+\.\.[a-f0-9]+" | head -1 | sed 's/intentionId=//')
+    if [ -n "$INTENTION_ID" ]; then
+        test_info "Intention ID: $INTENTION_ID"
+    fi
+else
+    test_fail "BDI intention start not detected"
+fi
+echo ""
+
+# Test 11: BDI Action Started
+echo "Test 11: BDI Action Execution Started"
+if grep -q "logType=ACTION_STARTED.*action=simple.Turn Fan On" "$SERVICE_LOG"; then
+    test_pass "Action 'Turn Fan On' execution started"
+    ACTION_LINE=$(grep "logType=ACTION_STARTED" "$SERVICE_LOG" | grep "action=simple.Turn Fan On" | head -1)
+    TASK_ID=$(echo "$ACTION_LINE" | grep -oE "taskId=[a-f0-9]+\.\.[a-f0-9]+" | head -1 | sed 's/taskId=//')
+    if [ -n "$TASK_ID" ]; then
+        test_info "Task ID: $TASK_ID"
+    fi
+else
+    test_fail "BDI action start not detected"
+fi
+echo ""
+
+# Test 12: BDI Intention Finished Successfully
+echo "Test 12: BDI Intention Completion"
+if grep -q "logType=INTENTION_FINISHED.*result=SUCCESS" "$SERVICE_LOG"; then
+    test_pass "Intention completed successfully after fan action"
+    FINISH_LINE=$(grep "logType=INTENTION_FINISHED" "$SERVICE_LOG" | grep "result=SUCCESS" | head -1)
+    INTENTION_RESULT=$(echo "$FINISH_LINE" | grep -oE "intentionId=[a-f0-9]+\.\.[a-f0-9]+" | head -1 | sed 's/intentionId=//')
+    if [ -n "$INTENTION_RESULT" ]; then
+        test_info "Intention $INTENTION_RESULT completed"
+    fi
+else
+    test_fail "BDI intention success completion not detected"
+fi
+echo ""
+
+# BDI Trace Summary
+echo "========================================"
+echo "  BDI REASONING CHAIN TRACE"
+echo "========================================"
+echo ""
+
+# Extract and display the BDI reasoning chain
+if grep -q "BDILog" "$SERVICE_LOG"; then
+    echo "  1. 🎯 Goal Pursued:    simple.Maintain Comfort"
+    
+    # Get plan name
+    PLAN_NAME=$(grep "logType=INTENTION_STARTED" "$SERVICE_LOG" | grep -oE "plan=simple\.[^,}]+" | head -1 | sed 's/plan=//')
+    if [ -n "$PLAN_NAME" ]; then
+        echo "  2. 📋 Plan Selected:   $PLAN_NAME"
+    fi
+    
+    # Get intention ID (truncated format with ..)
+    INTENTION_ID=$(grep "logType=INTENTION_STARTED" "$SERVICE_LOG" | grep -oE "intentionId=[a-f0-9]+\.\.[a-f0-9]+" | head -1 | sed 's/intentionId=//')
+    if [ -n "$INTENTION_ID" ]; then
+        echo "  3. 🔄 Intention ID:     $INTENTION_ID"
+    fi
+    
+    # Get action name
+    ACTION_NAME=$(grep "logType=ACTION_STARTED" "$SERVICE_LOG" | grep -oE "action=simple\.[^,}]+" | head -1 | sed 's/action=//')
+    if [ -n "$ACTION_NAME" ]; then
+        echo "  4. ⚡ Action Started:  $ACTION_NAME"
+    fi
+    
+    # Check for fan execution
+    if grep -q "\[FanService\] Turning fan" "$SERVICE_LOG"; then
+        FAN_ACTION=$(grep "\[FanService\] Turning fan" "$SERVICE_LOG" | head -1 | sed 's/.*\[FanService\] //')
+        echo "  5. 🔧 Service Action:  $FAN_ACTION"
+    fi
+    
+    # Get completion status
+    if grep -q "logType=INTENTION_FINISHED.*result=SUCCESS" "$SERVICE_LOG"; then
+        echo "  6. ✅ Result:           SUCCESS (Intention completed)"
+    elif grep -q "logType=INTENTION_FINISHED" "$SERVICE_LOG"; then
+        RESULT=$(grep "logType=INTENTION_FINISHED" "$SERVICE_LOG" | grep -oE "result=[A-Z]+" | head -1 | sed 's/result=//')
+        echo "  6. ⚠️  Result:           $RESULT"
+    fi
+    
+    echo ""
+    echo "  BDI Cycle: GOAL → PLAN → INTENTION → ACTION → COMPLETION"
+    echo ""
+else
+    echo "  No BDI events detected in logs"
+    echo ""
+fi
+
 # Summary
 echo "========================================"
 echo "  TEST SUMMARY"
@@ -302,6 +414,9 @@ else
     echo "---"
     echo "ServiceNode - ACTION_BEGIN reception:"
     grep -E "(ACTION_BEGIN|WebSocket RECV)" "$SERVICE_LOG" | tail -10 || echo "No matches"
+    echo "---"
+    echo "BDI Reasoning Chain:"
+    grep -E "BDILog.*(INTENTION|ACTION)" "$SERVICE_LOG" | tail -5 || echo "No BDI events found"
     echo ""
     echo "Full logs:"
     echo "  Service: $SERVICE_LOG"
