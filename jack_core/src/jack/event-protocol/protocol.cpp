@@ -323,7 +323,7 @@ std::string BDILog::toString() const
 {
     ThreadScratchAllocator scratch = getThreadScratchAllocator(nullptr);
     StringBuilder builder          = StringBuilder(scratch.arena);
-    builder.append(FMT_STRING("BDILog{{{}, level={}, logType={}"),
+    builder.append(FMT_STRING("BDILog{{{}, level={}, logType={},"),
                    static_cast<const Event*>(this)->toString(),
                    bdiLogLevelString(level),
                    bdiLogTypeString(logType));
@@ -380,13 +380,13 @@ std::string BDILog::Intention::toString() const
                                   compactString(goalId),
                                   compactString(intentionId),
                                   plan,
-                                  result);
+                                  bdiLogGoalIntentionResultString(this->result));
     return result;
 }
 
 std::string BDILog::Action::toString() const
 {
-    std::string result = JACK_FMT("BDILog::Intention{{goal={}, goalId={}, intentionId={}, plan={}, taskId={}, action={}, reasoning={}, success={}}}",
+    std::string result = JACK_FMT("BDILog::Action{{goal={}, goalId={}, intentionId={}, plan={}, taskId={}, action={}, reasoning={}, success={}}}",
                                   goal,
                                   compactString(goalId),
                                   compactString(intentionId),
