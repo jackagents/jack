@@ -6,4 +6,5 @@ if(NOT TARGET jack_core)
 endif()
 
 add_subdirectory(gol)
+add_subdirectory(simple)
 

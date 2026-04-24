@@ -5,6 +5,7 @@
     "gtest",
     "nlohmann-json",
     "uwebsockets",
-    "tracy"
+    "tracy",
+    "ixwebsocket"
   ]
 }

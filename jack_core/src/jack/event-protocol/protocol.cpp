@@ -155,6 +155,22 @@ void to_json(nlohmann::json& nlohmann_json_j, const ActionUpdate& nlohmann_json_
     }
 }
 
+void from_json(const nlohmann::json& nlohmann_json_j, ActionUpdate& nlohmann_json_t)
+{
+    nlohmann::from_json(nlohmann_json_j, static_cast<Event&>(nlohmann_json_t));
+
+    nlohmann_json_j.at("name").get_to(nlohmann_json_t.name);
+    nlohmann_json_j.at("taskId").get_to(nlohmann_json_t.taskId);
+    nlohmann_json_j.at("goal").get_to(nlohmann_json_t.goal);
+    nlohmann_json_j.at("goalId").get_to(nlohmann_json_t.goalId);
+    nlohmann_json_j.at("intentionId").get_to(nlohmann_json_t.intentionId);
+    nlohmann_json_j.at("plan").get_to(nlohmann_json_t.plan);
+    nlohmann_json_j.at("status").get_to(nlohmann_json_t.status);
+    // 'reply' is a shared_ptr<Message> that requires schema knowledge to reconstruct.
+    // The engine resolves the action schema from its registry after receiving the event.
+    nlohmann_json_t.reply = nullptr;
+}
+
 void to_json(nlohmann::json& nlohmann_json_j, const ActionBegin& nlohmann_json_t)
 {
     // call the base
@@ -176,6 +192,22 @@ void to_json(nlohmann::json& nlohmann_json_j, const ActionBegin& nlohmann_json_t
     }
 
     nlohmann_json_j["resourceLocks"] = nlohmann_json_t.resourceLocks;
+}
+
+void from_json(const nlohmann::json& nlohmann_json_j, ActionBegin& nlohmann_json_t)
+{
+    nlohmann::from_json(nlohmann_json_j, static_cast<Event&>(nlohmann_json_t));
+
+    nlohmann_json_j.at("name").get_to(nlohmann_json_t.name);
+    nlohmann_json_j.at("taskId").get_to(nlohmann_json_t.taskId);
+    nlohmann_json_j.at("goal").get_to(nlohmann_json_t.goal);
+    nlohmann_json_j.at("goalId").get_to(nlohmann_json_t.goalId);
+    nlohmann_json_j.at("intentionId").get_to(nlohmann_json_t.intentionId);
+    nlohmann_json_j.at("plan").get_to(nlohmann_json_t.plan);
+    nlohmann_json_j.at("resourceLocks").get_to(nlohmann_json_t.resourceLocks);
+    // 'message' is a shared_ptr<Message> that requires schema knowledge to reconstruct.
+    // The engine looks up the action schema and populates the message after receiving the event.
+    nlohmann_json_t.message = nullptr;
 }
 
 void from_json(const nlohmann::json& nlohmann_json_j, Pursue& nlohmann_json_t)
@@ -248,11 +280,12 @@ std::string ActionBegin::toString() const
 {
     ThreadScratchAllocator scratch = getThreadScratchAllocator(nullptr);
     StringBuilder builder          = StringBuilder(scratch.arena);
+    std::string messageStr = message ? message->toString() : "(null)";
     builder.append(FMT_STRING("ActionBegin{{{}, name={}, taskId={}, message={}, resourcesLocks={{"),
                    static_cast<const Event*>(this)->toString(),
                    name,
                    compactString(taskId),
-                   message->toString());
+                   messageStr);
 
     for (size_t resourceIndex = 0; resourceIndex < resourceLocks.size(); resourceIndex++) {
        std::string_view resource = resourceLocks[resourceIndex];
@@ -290,7 +323,7 @@ std::string BDILog::toString() const
 {
     ThreadScratchAllocator scratch = getThreadScratchAllocator(nullptr);
     StringBuilder builder          = StringBuilder(scratch.arena);
-    builder.append(FMT_STRING("BDILog{{{}, level={}, logType={}"),
+    builder.append(FMT_STRING("BDILog{{{}, level={}, logType={},"),
                    static_cast<const Event*>(this)->toString(),
                    bdiLogLevelString(level),
                    bdiLogTypeString(logType));
@@ -347,13 +380,13 @@ std::string BDILog::Intention::toString() const
                                   compactString(goalId),
                                   compactString(intentionId),
                                   plan,
-                                  result);
+                                  bdiLogGoalIntentionResultString(this->result));
     return result;
 }
 
 std::string BDILog::Action::toString() const
 {
-    std::string result = JACK_FMT("BDILog::Intention{{goal={}, goalId={}, intentionId={}, plan={}, taskId={}, action={}, reasoning={}, success={}}}",
+    std::string result = JACK_FMT("BDILog::Action{{goal={}, goalId={}, intentionId={}, plan={}, taskId={}, action={}, reasoning={}, success={}}}",
                                   goal,
                                   compactString(goalId),
                                   compactString(intentionId),

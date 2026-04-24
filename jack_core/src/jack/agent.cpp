@@ -456,12 +456,26 @@ Agent::HandlesActionResult Agent::handlesAction(std::string_view action, Handles
                 }
             }
         } else {
+            JACK_DEBUG("[DEBUG handlesAction] Checking action '{}' against {} attached services", action, attachedServices().size());
             for (const ServiceHandle& handle : attachedServices()) {
                 const Service* service = m_engine.getService(handle);
-                if (service && service->isAvailable() && service->handlesAction(action)) {
-                    result.service = service->handle();
-                    break;
+                JACK_DEBUG("[DEBUG handlesAction] Service handle={}, service_ptr={}, name={}",
+                           handle.toString(),
+                           (service ? service->name() : "NULL"),
+                           (service ? service->name() : "NULL"));
+                if (service) {
+                    bool available = service->isAvailable();
+                    bool handles = service->handlesAction(action);
+                    JACK_DEBUG("[DEBUG handlesAction]   isAvailable={}, handlesAction={}", available, handles);
+                    if (available && handles) {
+                        result.service = service->handle();
+                        JACK_DEBUG("[DEBUG handlesAction]   -> FOUND handler for action '{}'", action);
+                        break;
+                    }
                 }
+            }
+            if (!result.service.valid()) {
+                JACK_DEBUG("[DEBUG handlesAction] No service found to handle action '{}'", action);
             }
         }
     }
@@ -1890,6 +1904,7 @@ bool Agent::attachService(const ServiceHandle& serviceHandle, bool force)
 
     if (result) {
         m_attachedServices.push_back(serviceHandle);
+        JACK_INFO("[DEBUG Agent] Agent '{}' attached to service '{}' (handle={})", name(), service->name(), serviceHandle.toString());
     }
     return result;
 }

@@ -125,6 +125,11 @@ public:
     /// Set the human readable name of this JACK node
     void setName(const std::string& name);
 
+    /// Set the unique identifier (UUID) for this JACK node.
+    /// This UUID is used in protocol messages for node identification.
+    /// Must be called before adding bus adapters or starting the engine.
+    void setNodeId(const UniqueId& id);
+
     /// Return the status of the engine ( is it running )
     bool getStatus() const { return m_running; }
 
@@ -484,6 +489,10 @@ public:
     /// @param event The event to send
     void sendBusEvent(protocol::Event* event);
 
+    /// Broadcast REGISTER events for all locally-concrete (non-proxy) services
+    /// and agents so that newly-connected peers learn about our entities.
+    void announceLocalEntities();
+
     /// Setup a protocol event from `protocol.h` with the header filled out with
     /// this engine's bus addresses instance.
     template <typename T>
@@ -575,6 +584,10 @@ public:
     struct BusAddressableEntity
     {
         std::chrono::milliseconds m_lastMessageClockTime;
+        /// The node that announced this entity via REGISTER.
+        /// Used by the bus adapter to route targeted events to the correct node
+        /// (entity UUIDs are distinct from node IDs).
+        protocol::BusAddress m_hostNode;
     };
 
     /// The bus directory containing a list of bus addresses that this node is

@@ -408,6 +408,7 @@ struct ActionBegin : Event
     std::vector<std::string> resourceLocks;
 
     friend void to_json(nlohmann::json& j, const ActionBegin& e);
+    friend void from_json(const nlohmann::json& j, ActionBegin& e);
 };
 
 enum ActionStatus
@@ -439,6 +440,7 @@ struct ActionUpdate : Event
     std::shared_ptr<aos::jack::Message> reply; ///< The return values as a result of updating the action
 
     friend void to_json(nlohmann::json& j, const ActionUpdate& e);
+    friend void from_json(const nlohmann::json& j, ActionUpdate& e);
 };
 
 enum BDILogLevel

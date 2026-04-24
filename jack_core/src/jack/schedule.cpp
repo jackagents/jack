@@ -409,7 +409,17 @@ static void writeAgentCantHandleActionInPlanReason(StringBuilder& reason, const 
         if (it != services.begin()) {
             reason.appendRef("\n");
         }
-        reason.append(FMT_STRING("    {}: {}"), it->toHumanString(), service->isAvailable() ? "available" : "unavailable");
+        std::string status = "unknown";
+        if (!service) {
+            status = "NULL (not found in engine)";
+        } else if (!service->isAvailable()) {
+            status = "unavailable";
+        } else if (!service->handlesAction(std::string(action))) {
+            status = "available but doesn't handle action";
+        } else {
+            status = "available (SHOULD HANDLE!)";
+        }
+        reason.append(FMT_STRING("    {}: {}"), it->toHumanString(), status);
     }
 }
 

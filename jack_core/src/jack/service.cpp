@@ -268,6 +268,44 @@ bool Service::processCompletedAction(ActionEvent* action)
     ZoneScoped;
     bool result = false;
     if (action && (action->status == Event::SUCCESS || action->status == Event::FAIL)) {
+
+        /// Determine whether the original caller was a local or remote entity.
+        /// When an ACTION_BEGIN arrived over the bus from a remote node, caller
+        /// is null and m_remoteCaller holds the originator's bus address.
+        /// NOTE: m_remoteCaller is now always set for service-executed actions,
+        /// so we just check if it's set to determine if this is a remote action.
+        const bool remoteCallerSet = action->m_remoteCaller.isSet();
+        const bool remoteAction = remoteCallerSet;
+
+        if (remoteAction) {
+            /// The action was triggered by a remote agent over the bus.
+            /// Emit an ACTION_UPDATE back over the bus so the remote node can
+            /// complete the intention that is waiting on this action.
+            if (m_engine.haveBusAdapter()) {
+                protocol::ActionUpdate busEvent =
+                    m_engine.makeProtocolEvent<protocol::ActionUpdate>(busAddress(),
+                                                                       action->m_remoteCaller);
+                busEvent.name        = std::string(action->name());
+                busEvent.taskId      = action->m_taskId.toString();
+                busEvent.goal        = action->m_goal.m_name;
+                busEvent.goalId      = action->m_goal.m_id.toString();
+                busEvent.intentionId = action->m_intentionId.toString();
+                busEvent.plan        = action->m_plan;
+                busEvent.status      = (action->status == Event::SUCCESS)
+                                           ? protocol::ActionStatus_SUCCESS
+                                           : protocol::ActionStatus_FAILED;
+                busEvent.reply       = action->reply();
+                m_engine.sendBusEvent(&busEvent);
+                JACK_INFO("Remote action '{}' completed, ACTION_UPDATE sent to '{}'",
+                          action->name(), action->m_remoteCaller.name);
+            } else {
+                JACK_WARNING("Remote action '{}' completed but no bus adapter to send reply", action->name());
+            }
+
+            JACK_CHUNK_ALLOCATOR_GIVE(&m_engine.m_eventAllocator, ActionEvent, action, JACK_ALLOCATOR_CLEAR_MEMORY);
+            return true;
+        }
+
         ActionCompleteEvent* event = JACK_ALLOCATOR_NEW(&m_engine.m_eventAllocator,
                                                         ActionCompleteEvent,
                                                         action->name(),
@@ -284,15 +322,6 @@ bool Service::processCompletedAction(ActionEvent* action)
         if (!action->recipient) {
             /// \note If the action has no recipient, then this is a local
             /// action we sent to ourselves, the caller is also ourselves.
-            ///
-            /// \todo This is quite confusing the routing. I put this re-routing
-            /// information into this function because I think services and
-            /// actions are affected by this.
-            ///
-            /// We should consider only having 1 queue, since we have
-            /// a lock-free queue, it doesn't matter that much to allow
-            /// agents/services to have their own queues since even if we
-            /// multithread them it will still be thread safe.
             assert(action->caller);
             event->caller = action->caller;
         }
@@ -301,7 +330,6 @@ bool Service::processCompletedAction(ActionEvent* action)
             /// \note Pull out the explainability messaging from the action
             auto reply = action->reply();
 
-                /// \note Emit messages on the bus
             protocol::BDILog logEvent =
                 m_engine.makeBDILogActionFinished(
                     bdiLogHeader(reply ? static_cast<protocol::BDILogLevel>(reply->reasoningLevel()) : protocol::BDILogLevel::BDILogLevel_NORMAL),
@@ -311,9 +339,11 @@ bool Service::processCompletedAction(ActionEvent* action)
             /// \todo If we are a pure service, we currently don't want to set
             /// the sender as the service itself. The agent executed an action
             /// which got routed to a service. Currently the JS clients don't
-            /// have a way of matching an action started from an agent and an 
+            /// have a way of matching an action started from an agent and an
             /// action finished from a service.
-            logEvent.sender = event->recipient->busAddress();
+            if (event->recipient) {
+                logEvent.sender = event->recipient->busAddress();
+            }
             m_engine.sendBusEvent(&logEvent);
         }
 
@@ -406,7 +436,20 @@ void Service::eventDispatch(Event *event)
             assert(actionEvent->recipient == this);
             assert(returnEventToAllocator);
 
-            if (0/*isProxy()*/) {   /// @todo removed util the distributed service are working again on the bus
+            if (isProxy()) {
+                /// If the action is already complete (SUCCESS/FAIL), don't forward to bus.
+                /// This happens when we receive a completion notification from the remote service.
+                if (actionEvent->status == Event::SUCCESS || actionEvent->status == Event::FAIL) {
+                    /// For completed actions on proxy, execute the handler to update local state
+                    auto actionHandlerIt = m_actionHandlers.find(actionEvent->name());
+                    if (actionHandlerIt != m_actionHandlers.end()) {
+                        const auto& actionFunction = actionHandlerIt->second;
+                        actionFunction(*this, *actionEvent->request(), *actionEvent->reply(), actionEvent->handle());
+                    }
+                    /// Clean up the action event
+                    JACK_CHUNK_ALLOCATOR_GIVE(&m_engine.m_eventAllocator, ActionEvent, actionEvent, JACK_ALLOCATOR_CLEAR_MEMORY);
+                    returnEventToAllocator = false;
+                } else {
                 /// \note Forward event onto the bus so it arrives at the real
                 /// service instance.
                 if (engine().haveBusAdapter()) {
@@ -422,7 +465,10 @@ void Service::eventDispatch(Event *event)
                   busEvent.message       = actionEvent->request();
                   busEvent.resourceLocks = actionEvent->m_resourceLocks;
                   engine().sendBusEvent(&busEvent);
+                } else {
+                    JACK_WARNING("Proxy service has no bus adapter - cannot forward action '{}'", actionEvent->name());
                 }
+                }  /// End of forwarding block for pending actions
             } else {
                 auto actionHandlerIt = m_actionHandlers.find(actionEvent->name());
                 if (actionHandlerIt != m_actionHandlers.end()) {
@@ -459,7 +505,8 @@ void Service::eventDispatch(Event *event)
                     /// locking them here
                     /// Try and fast track the action, no-op if not possible
                     returnEventToAllocator = false;
-                    if (!processCompletedAction(actionEvent)) {
+                    bool processed = processCompletedAction(actionEvent);
+                    if (!processed) {
                         m_currentActions.push_back(actionEvent);
                     }
                 } else {

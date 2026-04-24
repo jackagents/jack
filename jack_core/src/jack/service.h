@@ -121,6 +121,7 @@ public:
     /// Query the name of the service.
     /// @return The name of the service
     const std::string& name() const { return m_handle.m_name; }
+    const std::string& templateName() const { return m_templateName; }
 
     /// Set the service's unique identifier. The identifier is set irrespective
     /// of if the id is valid or not.
